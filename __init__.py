@@ -9,7 +9,7 @@ from bpy.props import EnumProperty, StringProperty
 class RenderBC(bpy.types.Operator):#Метод для РЕНДЕРА цвета на плоскости
     bl_idname = "object.renderbc"
     bl_label = "Simple RENDER BC"
-    
+
     def execute(self, context):
         context.scene.render.resolution_y= context.scene.render.resolution_x#уравнивание разрешения до квадрата
         mat = context.active_object.active_material#забираем материал с выбранного объекта
@@ -85,14 +85,13 @@ class RenderSettBC(bpy.types.Operator):
                             found_node = node
                             node_tree.nodes.active = found_node
                         if node.label == bake_target_label_uv:
-                                found_node1 = node
-                                found_node1.uv_map = cur_obj.data.uv_layers.active.name
-                                break
+                            found_node1 = node
+                            found_node1.uv_map = cur_obj.data.uv_layers.active.name
+                            break
                         else:
                             texture_image_my = nodes.new(type="ShaderNodeTexImage")#создаем  ноду картинки
                             print('createimagenode')
                             texture_image_my.label = bake_target_label
-                            ############node_tree.nodes.remove(texture_image_my)#################################удаление ноды после всего
                             uv_map_node  = nodes.new(type="ShaderNodeUVMap")#создаем ноду юв
                             uv_map_node.label = bake_target_label_uv
                             uv_map_node.uv_map = cur_obj.data.uv_layers.active.name#выбираем юв
@@ -159,33 +158,24 @@ class RenderSettEmi(bpy.types.Operator):
                         if node.label == bake_target_label:
                             found_node = node
                             node_tree.nodes.active = found_node
+                        if node.label == bake_target_label_uv:
+                            found_node1 = node
+                            found_node1.uv_map = cur_obj.data.uv_layers.active.name
                             break
-                if found_node:
-                    if node_tree:
-                        # Ищем узел юв и переназначем юв если выбрана новая
-                        found_node = None
-                        for node in node_tree.nodes:
-                            if node.label == bake_target_label_uv:
-                                found_node1 = node
-                                found_node1.uv_map = cur_obj.data.uv_layers.active.name
-                                break
-                    pass
-                else:
-                    texture_image_my = nodes.new(type="ShaderNodeTexImage")#создаем  ноду картинки
-                    texture_image_my.label = bake_target_label
+                        else:
+                            texture_image_my = nodes.new(type="ShaderNodeTexImage")#создаем  ноду картинки
+                            texture_image_my.label = bake_target_label
 
-                    uv_map_node  = nodes.new(type="ShaderNodeUVMap")#создаем ноду юв
-                    uv_map_node.label = bake_target_label_uv
-                    uv_map_node.uv_map = cur_obj.data.uv_layers.active.name#выбираем юв
+                            uv_map_node  = nodes.new(type="ShaderNodeUVMap")#создаем ноду юв
+                            uv_map_node.label = bake_target_label_uv
+                            uv_map_node.uv_map = cur_obj.data.uv_layers.active.name#выбираем юв
 
-                    node_tree.links.new(uv_map_node.outputs['UV'],texture_image_my.inputs['Vector'])#соединяем юв и картинку
-                    bake_resolution = int(context.active_object.simple_bake_resolution)
-                    
-                    node_tree.nodes.active = texture_image_my#делаем активной
-                    node_tree.nodes.active.image = bpy.data.images[bake_target_label]#ставим в выбранную картинку    
-                    break
-        else:
-            pass
+                            node_tree.links.new(uv_map_node.outputs['UV'],texture_image_my.inputs['Vector'])#соединяем юв и картинку
+                            bake_resolution = int(context.active_object.simple_bake_resolution)
+                            
+                            node_tree.nodes.active = texture_image_my#делаем активной
+                            node_tree.nodes.active.image = bpy.data.images[bake_target_label]#ставим в выбранную картинку    
+                            break
         bpy.ops.object.bake(type="EMIT",use_clear= True) 
         ########удаление использованного из материала
         if(len(cur_obj.data.materials)>0):#если есть материал
