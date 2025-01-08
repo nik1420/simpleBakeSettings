@@ -24,6 +24,11 @@ class RenderSettBC(bpy.types.Operator):
         context.scene.render.engine = 'CYCLES'
         context.scene.render.bake.use_pass_direct = False
         context.scene.render.bake.use_pass_indirect = False
+        bake_resolution = int(context.active_object.simple_bake_resolution)
+        if(bpy.data.images[bake_target_label]):
+            pass
+        else:
+            bake_img = bpy.ops.image.new(name = bake_target_label,width=bake_resolution,height=bake_resolution)#создаем картинку
         if(len(cur_obj.data.materials)>0):#если есть материал
             for index, material in enumerate(cur_obj.data.materials):
                 #настройка материала
@@ -54,13 +59,10 @@ class RenderSettBC(bpy.types.Operator):
                     uv_map_node.label = bake_target_label_uv
                     uv_map_node.uv_map = cur_obj.data.uv_layers.active.name#выбираем юв
                     node_tree.links.new(uv_map_node.outputs['UV'],texture_image_my.inputs['Vector'])#соединяем юв и картинку
-
-                    bake_resolution = int(context.active_object.simple_bake_resolution)
-                    bake_img = bpy.ops.image.new(name = bake_target_label,width=bake_resolution,height=bake_resolution)#создаем картинку
                     node_tree.nodes.active = texture_image_my#делаем активной
-                        
-                node_tree.nodes.active.image = bpy.data.images[bake_target_label]#ставим в выбранную картинку
-                bpy.ops.object.bake(type="DIFFUSE",use_clear= True)
+                    node_tree.nodes.active.image = bpy.data.images[bake_target_label]#ставим в выбранную картинку
+                
+        bpy.ops.object.bake(type="DIFFUSE",use_clear= True)        
         return {'FINISHED'}
 
 
@@ -74,6 +76,10 @@ class RenderSettEmi(bpy.types.Operator):
         cur_obj = bpy.context.active_object#находим выбранный объект
         cyc_sett = bpy.data.scenes["Scene"].cycles
         cyc_sett.bake_type = 'EMIT'
+        if(bpy.data.images[bake_target_label]):
+            pass
+        else:
+            bake_img = bpy.ops.image.new(name = bake_target_label,width=bake_resolution,height=bake_resolution)#создаем картинку
         if(len(cur_obj.data.materials)>0):#если есть материал
             for index, material in enumerate(cur_obj.data.materials):
                 node_tree = material.node_tree#лезем в ноды
@@ -106,14 +112,13 @@ class RenderSettEmi(bpy.types.Operator):
 
                     node_tree.links.new(uv_map_node.outputs['UV'],texture_image_my.inputs['Vector'])#соединяем юв и картинку
                     bake_resolution = int(context.active_object.simple_bake_resolution)
-                    bake_img = bpy.ops.image.new(name = bake_target_label,width=bake_resolution,height=bake_resolution)#создаем картинку
+                    
                     node_tree.nodes.active = texture_image_my#делаем активной
-                        
-                node_tree.nodes.active.image = bpy.data.images[bake_target_label]#ставим в выбранную картинку
+                    node_tree.nodes.active.image = bpy.data.images[bake_target_label]#ставим в выбранную картинку    
                 
-                bpy.ops.object.bake(type="EMIT",use_clear= True)
         else:
             pass
+        bpy.ops.object.bake(type="EMIT",use_clear= True) 
         return {'FINISHED'}
 
 # Панель для добавления кнопки
