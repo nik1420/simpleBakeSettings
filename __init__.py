@@ -6,6 +6,43 @@ import time
 from bpy.props import EnumProperty, StringProperty
 # Оператор для выполнения действия
 
+class RenderBC(bpy.types.Operator):#Метод для РЕНДЕРА цвета на плоскости
+    bl_idname = "object.renderbc"
+    bl_label = "Simple RENDER BC"
+    
+    def execute(self, context):
+        context.scene.render.resolution_y= context.scene.render.resolution_x
+        mat = context.active_object.active_material#забираем материал с выбранного объекта
+        bpy.ops.mesh.primitive_plane_add(location=[0,0,-12])#создаем плейн
+        plane_obj = context.object
+        context.active_object.data.materials.append(mat)
+        bpy.ops.object.camera_add(location=[0,0,-9.2222],rotation=[0,0,0])#создаем камеру
+        camera_obj = context.object
+        context.scene.view_layers["ViewLayer"].use_pass_diffuse_color = True#включаем пасс цвета в слоях
+        context.scene.use_nodes = True
+        node_tree = context.scene.node_tree
+        context.scene.render.engine = 'BLENDER_EEVEE_NEXT'#включаем еву
+        render_layers_node = None
+        render_viewer_node = None
+        bpy.ops.render.render(animation= False,use_viewport= True)#рендерим и проверяем весь композитор
+        for node in node_tree.nodes:
+            if node.type == 'COMPOSITE':
+                if node.type == 'R_LAYERS':
+                    node_tree.links.new(render_layers_node.outputs['DiffCol'],render_viewer_node.inputs['Image'])
+                    context.scene.node_tree.nodes["view_lay"].use_alpha = False
+                    break
+            else:
+                render_layers_node = node_tree.nodes.new(type='CompositorNodeRLayers')
+                render_layers_node.label = 'ren_lay'
+                render_viewer_node = node_tree.nodes.new(type='CompositorNodeViewer')
+                render_viewer_node.label = 'view_lay'
+                node_tree.links.new(render_layers_node.outputs['DiffCol'],render_viewer_node.inputs['Image'])
+                break
+        bpy.data.objects.remove(plane_obj,do_unlink=True)#удаляем камеру и плейн
+        bpy.data.objects.remove(camera_obj,do_unlink=True)
+            
+        return {'FINISHED'}
+
 class RenderSettBC(bpy.types.Operator):
     bl_idname = "object.rendersettbc"
     bl_label = "Simple Bake BC"
@@ -137,15 +174,20 @@ class OBJECT_PT_CustomPanel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        if context.active_object:
-            #layout.prop(bpy.data.scenes["Scene"], 'name', text='Разрешение')
-            row = layout.row()
-            row.prop(context.active_object, 'simple_bake_resolution', text='Resolution', icon='OBJECT_HIDDEN')
-            row = layout.row()
-            row.prop(context.active_object, 'simple_bake_image_name', text="Image name", icon= 'NODE_TEXTURE')
-            layout.prop(bpy.context.active_object.data.uv_layers,'active_index',text = "UV Map")
-            layout.operator("object.rendersettbc", icon='RESTRICT_RENDER_OFF')
-            layout.operator("object.rendersettemi", icon='RESTRICT_RENDER_OFF')
+        if bpy.context.active_object:
+            if(bpy.context.active_object.type != "CAMERA"):
+                #layout.prop(bpy.data.scenes["Scene"], 'name', text='Разрешение')
+                row = layout.row()
+                row.prop(context.active_object, 'simple_bake_resolution', text='Resolution', icon='OBJECT_HIDDEN')
+                row = layout.row()
+                row.prop(context.active_object, 'simple_bake_image_name', text="Image name", icon= 'NODE_TEXTURE')
+                layout.prop(bpy.context.active_object.data.uv_layers,'active_index',text = "UV Map")
+                layout.operator("object.rendersettbc", icon='RESTRICT_RENDER_OFF')
+                layout.operator("object.rendersettemi", icon='RESTRICT_RENDER_OFF')
+                layout.split(factor=0.1)
+                box = layout.box()
+                box.prop(bpy.data.scenes["Scene"].render, text='Render Resolution Bake',property="resolution_x")
+                box.operator("object.renderbc")
         else:
             row = layout.row()
             row.label(text = "No object selected")
@@ -155,7 +197,7 @@ def register():
     bpy.utils.register_class(RenderSettEmi)
     bpy.utils.register_class(RenderSettBC)
     bpy.utils.register_class(OBJECT_PT_CustomPanel)
-
+    bpy.utils.register_class(RenderBC)
     bpy.types.Object.simple_bake_resolution = EnumProperty(
         name="Resolution",
         items=(
@@ -169,6 +211,7 @@ def register():
         ),
         default="1024"
     )
+    
     bpy.types.Object.simple_bake_image_name = StringProperty(
         name = "Bake Image Name",
         default="BakedImage"
@@ -178,6 +221,7 @@ def unregister():
     bpy.utils.unregister_class(RenderSettEmi)
     bpy.utils.unregister_class(RenderSettBC)
     bpy.utils.unregister_class(OBJECT_PT_CustomPanel)
+    bpy.utils.unregister_class(RenderBC)
     del bpy.types.Object.simple_bake_resolution
     del bpy.types.Object.simple_bake_image_name
 
