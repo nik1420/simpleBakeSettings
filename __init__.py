@@ -39,10 +39,22 @@ class RenderSettBC(bpy.types.Operator):
                             node_tree.nodes.active = found_node
                             break
                 if found_node:
-                    pass
+                     if node_tree:
+                        # Ищем узел юв и переназначем юв если выбрана новая
+                        found_node = None
+                        for node in node_tree.nodes:
+                            if node.label == "uvlbl":
+                                found_node = node
+                                found_node.uv_map = cur_obj.data.uv_layers.active.name
+                                break
                 else:
                     texture_image_my = nodes.new(type="ShaderNodeTexImage")#создаем  ноду картинки
                     texture_image_my.label = "lbl"
+
+                    uv_map_node  = nodes.new(type="ShaderNodeUVMap")#создаем ноду юв
+                    uv_map_node.label = "uvlbl"
+                    uv_map_node.uv_map = cur_obj.data.uv_layers.active.name#выбираем юв
+
                     bake_img = bpy.ops.image.new(name = "Bake",width=res,height=res)#создаем картинку
                     node_tree.nodes.active = texture_image_my
                     texture_image_my.select = True#делаем выбранной
@@ -77,10 +89,24 @@ class RenderSettEmi(bpy.types.Operator):
                             node_tree.nodes.active = found_node
                             break
                 if found_node:
+                    if node_tree:
+                        # Ищем узел юв и переназначем юв если выбрана новая
+                        found_node = None
+                        for node in node_tree.nodes:
+                            if node.label == "uvlbl":
+                                found_node = node
+                                found_node.uv_map = cur_obj.data.uv_layers.active.name
+                                break
                     pass
                 else:
                     texture_image_my = nodes.new(type="ShaderNodeTexImage")#создаем  ноду картинки
                     texture_image_my.label = "lbl"
+
+                    uv_map_node  = nodes.new(type="ShaderNodeUVMap")#создаем ноду юв
+                    uv_map_node.label = "uvlbl"
+                    uv_map_node.uv_map = cur_obj.data.uv_layers.active.name#выбираем юв
+
+                    node_tree.links.new(uv_map_node.outputs['UV'],texture_image_my.inputs['Vector'])
                     bake_img = bpy.ops.image.new(name = "Bake",width=res,height=res)#создаем картинку
                     node_tree.nodes.active = texture_image_my
                     texture_image_my.select = True#делаем выбранной
@@ -104,6 +130,7 @@ class OBJECT_PT_CustomPanel(bpy.types.Panel):
         layout = self.layout
         row = layout.row() # Добавление поля разрешения
         row.prop(bpy.data.scenes["Scene"].render,'resolution_x',text="Разрешение")
+        layout.prop(bpy.context.active_object.data.uv_layers,'active_index',text = "UV Map")
         # Добавление кнопки, которая вызывает наш оператор
         layout.operator("object.rendersettbc")
         layout.operator("object.rendersettemi")
