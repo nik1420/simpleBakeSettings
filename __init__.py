@@ -22,7 +22,9 @@ class RenderBC(bpy.types.Operator):#Метод для РЕНДЕРА цвета 
         context.scene.use_nodes = True
         node_tree = context.scene.node_tree
         context.scene.render.engine = 'BLENDER_EEVEE_NEXT'#включаем еву
-        render_layers_node = None
+        context.scene.eevee.taa_render_samples = 16#настройки евы
+        context.scene.eevee.use_shadows = False
+        render_layers_node = None#объявление переменных для композитора
         render_viewer_node = None
         bpy.ops.render.render(animation= False,use_viewport= True)#рендерим и проверяем весь композитор
         for node in node_tree.nodes:
