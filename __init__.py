@@ -134,12 +134,12 @@ class OBJECT_PT_CustomPanel(bpy.types.Panel):
         if context.active_object:
             #layout.prop(bpy.data.scenes["Scene"], 'name', text='Разрешение')
             row = layout.row()
-            row.prop(context.active_object, 'simple_bake_resolution', text='Resolution')
+            row.prop(context.active_object, 'simple_bake_resolution', text='Resolution', icon='OBJECT_HIDDEN')
             row = layout.row()
-            row.prop(context.active_object, 'simple_bake_image_name', text="Image name")
+            row.prop(context.active_object, 'simple_bake_image_name', text="Image name", icon='NODE_TEXTURE')
             layout.prop(bpy.context.active_object.data.uv_layers,'active_index',text = "UV Map")
-            layout.operator("object.rendersettbc")
-            layout.operator("object.rendersettemi")
+            layout.operator("object.rendersettbc", icon='RESTRICT_RENDER_OFF')
+            layout.operator("object.rendersettemi", icon='RESTRICT_RENDER_OFF')
         else:
             row = layout.row()
             row.label(text = "No object selected")
