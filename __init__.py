@@ -11,7 +11,7 @@ class RenderBC(bpy.types.Operator):#Метод для РЕНДЕРА цвета 
     bl_label = "Simple RENDER BC"
     
     def execute(self, context):
-        context.scene.render.resolution_y= context.scene.render.resolution_x
+        context.scene.render.resolution_y= context.scene.render.resolution_x#уравнивание разрешения до квадрата
         mat = context.active_object.active_material#забираем материал с выбранного объекта
         bpy.ops.mesh.primitive_plane_add(location=[0,0,-12])#создаем плейн
         plane_obj = context.object
@@ -95,7 +95,7 @@ class RenderSettBC(bpy.types.Operator):
                             texture_image_my = nodes.new(type="ShaderNodeTexImage")#создаем  ноду картинки
                             print('createimagenode')
                             texture_image_my.label = bake_target_label
-
+                            ############node_tree.nodes.remove(texture_image_my)#################################удаление ноды после всего
                             uv_map_node  = nodes.new(type="ShaderNodeUVMap")#создаем ноду юв
                             uv_map_node.label = bake_target_label_uv
                             uv_map_node.uv_map = cur_obj.data.uv_layers.active.name#выбираем юв
