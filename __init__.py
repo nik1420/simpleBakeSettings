@@ -18,6 +18,8 @@ class RenderBC(bpy.types.Operator):#Метод для РЕНДЕРА цвета 
         context.active_object.data.materials.append(mat)
         bpy.ops.object.camera_add(location=[0,0,-9.2222],rotation=[0,0,0])#создаем камеру
         camera_obj = context.object
+        old_cam = context.scene.camera
+        context.scene.camera = camera_obj
         context.scene.view_layers["ViewLayer"].use_pass_diffuse_color = True#включаем пасс цвета в слоях
         context.scene.use_nodes = True
         node_tree = context.scene.node_tree
@@ -42,7 +44,7 @@ class RenderBC(bpy.types.Operator):#Метод для РЕНДЕРА цвета 
                 break
         bpy.data.objects.remove(plane_obj,do_unlink=True)#удаляем камеру и плейн
         bpy.data.objects.remove(camera_obj,do_unlink=True)
-            
+        context.scene.camera = old_cam
         return {'FINISHED'}
 
 class RenderSettBC(bpy.types.Operator):
