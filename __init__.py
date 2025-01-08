@@ -61,6 +61,7 @@ class RenderSette(bpy.types.Operator):
             pass
         time.sleep(1)
         bpy.ops.object.bake(type="DIFFUSE",use_clear= True)
+        print('hi')
         return {'FINISHED'}
 
 
