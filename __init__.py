@@ -72,19 +72,16 @@ class RenderSettBC(bpy.types.Operator):
         if(found_image == False):
             bake_img = bpy.ops.image.new(name = bake_target_label,width=bake_resolution,height=bake_resolution)#создаем картинку
         if(len(cur_obj.data.materials)>0):#если есть материал
-            print('gotmat')
             for index, material in enumerate(cur_obj.data.materials):
                 #настройка материала
                 node_tree = material.node_tree#лезем в ноды
                 nodes = node_tree.nodes#и в дерево
                 if node_tree:
-                    print('gotnode')
                     # Ищем узел с указанным лейблом чтоб не создовать несколько
                     found_node = None
                     found_node1 = None
                     for node in node_tree.nodes:
                         if node.label == bake_target_label:
-                            print('gotAlready')
                             found_node = node
                             node_tree.nodes.active = found_node
                         if node.label == bake_target_label_uv:
@@ -102,8 +99,28 @@ class RenderSettBC(bpy.types.Operator):
                             node_tree.links.new(uv_map_node.outputs['UV'],texture_image_my.inputs['Vector'])#соединяем юв и картинку
                             node_tree.nodes.active = texture_image_my#делаем активной
                             node_tree.nodes.active.image = bpy.data.images[bake_target_label]#ставим в выбранную картинку
-                    
-        bpy.ops.object.bake(type="DIFFUSE",use_clear= True)        
+                            break
+        bpy.ops.object.bake(type="DIFFUSE",use_clear= True) 
+########удаление использованного из материала
+        if(len(cur_obj.data.materials)>0):#если есть материал
+            for index, material in enumerate(cur_obj.data.materials):
+                #настройка материала
+                node_tree = material.node_tree#лезем в ноды
+                nodes = node_tree.nodes#и в дерево
+                if node_tree:
+                    # Ищем узел с указанным лейблом чтоб не создовать несколько
+                    found_node = None
+                    found_node1 = None
+                    for node in node_tree.nodes:
+                        if node.label == bake_target_label:
+                            found_node = node
+                            node_tree.nodes.remove(found_node)
+                        
+                    for node in node_tree.nodes:
+                        if node.label == bake_target_label_uv:
+                            found_node1 = node
+                            node_tree.nodes.remove(found_node1)
+                                       
         return {'FINISHED'}
 
 
@@ -117,6 +134,12 @@ class RenderSettEmi(bpy.types.Operator):
         cur_obj = bpy.context.active_object#находим выбранный объект
         cyc_sett = bpy.data.scenes["Scene"].cycles
         cyc_sett.bake_type = 'EMIT'
+        cyc_sett = context.scene.cycles
+        cyc_sett.device = "GPU"
+        cyc_sett.use_adaptive_sampling = False
+        cyc_sett.use_denoising = False
+        cyc_sett.samples = 10
+        context.scene.render.engine = 'CYCLES'
         bake_resolution = int(context.active_object.simple_bake_resolution)
         found_image = False
         for image in bpy.data.images:
@@ -160,10 +183,29 @@ class RenderSettEmi(bpy.types.Operator):
                     
                     node_tree.nodes.active = texture_image_my#делаем активной
                     node_tree.nodes.active.image = bpy.data.images[bake_target_label]#ставим в выбранную картинку    
-                
+                    break
         else:
             pass
         bpy.ops.object.bake(type="EMIT",use_clear= True) 
+        ########удаление использованного из материала
+        if(len(cur_obj.data.materials)>0):#если есть материал
+            for index, material in enumerate(cur_obj.data.materials):
+                #настройка материала
+                node_tree = material.node_tree#лезем в ноды
+                nodes = node_tree.nodes#и в дерево
+                if node_tree:
+                    # Ищем узел с указанным лейблом чтоб не создовать несколько
+                    found_node = None
+                    found_node1 = None
+                    for node in node_tree.nodes:
+                        if node.label == bake_target_label:
+                            found_node = node
+                            node_tree.nodes.remove(found_node)
+                        
+                    for node in node_tree.nodes:
+                        if node.label == bake_target_label_uv:
+                            found_node1 = node
+                            node_tree.nodes.remove(found_node1)
         return {'FINISHED'}
 
 # Панель для добавления кнопки
