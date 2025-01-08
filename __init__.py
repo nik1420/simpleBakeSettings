@@ -25,43 +25,45 @@ class RenderSettBC(bpy.types.Operator):
         context.scene.render.bake.use_pass_direct = False
         context.scene.render.bake.use_pass_indirect = False
         bake_resolution = int(context.active_object.simple_bake_resolution)
-        if(bpy.data.images[bake_target_label]):
-            pass
-        else:
+        found_image = False
+        for image in bpy.data.images:
+            if(image.name == bake_target_label):
+                found_image = True
+                break
+        if(found_image == False):
             bake_img = bpy.ops.image.new(name = bake_target_label,width=bake_resolution,height=bake_resolution)#создаем картинку
         if(len(cur_obj.data.materials)>0):#если есть материал
+            print('gotmat')
             for index, material in enumerate(cur_obj.data.materials):
                 #настройка материала
                 node_tree = material.node_tree#лезем в ноды
                 nodes = node_tree.nodes#и в дерево
                 if node_tree:
+                    print('gotnode')
                     # Ищем узел с указанным лейблом чтоб не создовать несколько
                     found_node = None
+                    found_node1 = None
                     for node in node_tree.nodes:
                         if node.label == bake_target_label:
+                            print('gotAlready')
                             found_node = node
                             node_tree.nodes.active = found_node
-                            break
-                if found_node:
-                     if node_tree:
-                        # Ищем узел юв и переназначем юв если выбрана новая
-                        found_node1 = None
-                        for node in node_tree.nodes:
-                            if node.label == bake_target_label_uv:
+                        if node.label == bake_target_label_uv:
                                 found_node1 = node
                                 found_node1.uv_map = cur_obj.data.uv_layers.active.name
                                 break
-                else:
-                    texture_image_my = nodes.new(type="ShaderNodeTexImage")#создаем  ноду картинки
-                    texture_image_my.label = bake_target_label
+                        else:
+                            texture_image_my = nodes.new(type="ShaderNodeTexImage")#создаем  ноду картинки
+                            print('createimagenode')
+                            texture_image_my.label = bake_target_label
 
-                    uv_map_node  = nodes.new(type="ShaderNodeUVMap")#создаем ноду юв
-                    uv_map_node.label = bake_target_label_uv
-                    uv_map_node.uv_map = cur_obj.data.uv_layers.active.name#выбираем юв
-                    node_tree.links.new(uv_map_node.outputs['UV'],texture_image_my.inputs['Vector'])#соединяем юв и картинку
-                    node_tree.nodes.active = texture_image_my#делаем активной
-                    node_tree.nodes.active.image = bpy.data.images[bake_target_label]#ставим в выбранную картинку
-                
+                            uv_map_node  = nodes.new(type="ShaderNodeUVMap")#создаем ноду юв
+                            uv_map_node.label = bake_target_label_uv
+                            uv_map_node.uv_map = cur_obj.data.uv_layers.active.name#выбираем юв
+                            node_tree.links.new(uv_map_node.outputs['UV'],texture_image_my.inputs['Vector'])#соединяем юв и картинку
+                            node_tree.nodes.active = texture_image_my#делаем активной
+                            node_tree.nodes.active.image = bpy.data.images[bake_target_label]#ставим в выбранную картинку
+                    
         bpy.ops.object.bake(type="DIFFUSE",use_clear= True)        
         return {'FINISHED'}
 
@@ -76,9 +78,13 @@ class RenderSettEmi(bpy.types.Operator):
         cur_obj = bpy.context.active_object#находим выбранный объект
         cyc_sett = bpy.data.scenes["Scene"].cycles
         cyc_sett.bake_type = 'EMIT'
-        if(bpy.data.images[bake_target_label]):
-            pass
-        else:
+        bake_resolution = int(context.active_object.simple_bake_resolution)
+        found_image = False
+        for image in bpy.data.images:
+            if(image.name == bake_target_label):
+                found_image = True
+                break
+        if(found_image == False):
             bake_img = bpy.ops.image.new(name = bake_target_label,width=bake_resolution,height=bake_resolution)#создаем картинку
         if(len(cur_obj.data.materials)>0):#если есть материал
             for index, material in enumerate(cur_obj.data.materials):
@@ -136,7 +142,7 @@ class OBJECT_PT_CustomPanel(bpy.types.Panel):
             row = layout.row()
             row.prop(context.active_object, 'simple_bake_resolution', text='Resolution', icon='OBJECT_HIDDEN')
             row = layout.row()
-            row.prop(context.active_object, 'simple_bake_image_name', text="Image name", icon='NODE_TEXTURE')
+            row.prop(context.active_object, 'simple_bake_image_name', text="Image name", icon= 'NODE_TEXTURE')
             layout.prop(bpy.context.active_object.data.uv_layers,'active_index',text = "UV Map")
             layout.operator("object.rendersettbc", icon='RESTRICT_RENDER_OFF')
             layout.operator("object.rendersettemi", icon='RESTRICT_RENDER_OFF')
