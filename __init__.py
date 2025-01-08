@@ -11,7 +11,9 @@ class RenderBC(bpy.types.Operator):#Метод для РЕНДЕРА цвета 
     bl_label = "Simple RENDER BC"
 
     def execute(self, context):
-        context.scene.render.resolution_y= context.scene.render.resolution_x#уравнивание разрешения до квадрата
+        rend_res_val = context.active_object.simple_bake_image_res
+        context.scene.render.resolution_y= int(rend_res_val)
+        context.scene.render.resolution_x= int(rend_res_val)
         mat = context.active_object.active_material#забираем материал с выбранного объекта
         bpy.ops.mesh.primitive_plane_add(location=[0,0,-12])#создаем плейн
         plane_obj = context.object
@@ -222,7 +224,8 @@ class OBJECT_PT_CustomPanel(bpy.types.Panel):
                 layout.operator("object.rendersettemi", icon='RESTRICT_RENDER_OFF')
                 layout.split(factor=0.1)
                 box = layout.box()
-                box.prop(bpy.data.scenes["Scene"].render, text='Render Resolution Bake',property="resolution_x")
+                row = box.row()
+                row.prop(context.active_object, 'simple_bake_image_res', text="Render Resolution")
                 box.operator("object.renderbc")
         else:
             row = layout.row()
@@ -252,6 +255,10 @@ def register():
         name = "Bake Image Name",
         default="BakedImage"
     )
+    bpy.types.Object.simple_bake_image_res = StringProperty(
+        name = "Render Resolution",
+        default="1024"
+    )
 
 def unregister():
     bpy.utils.unregister_class(RenderSettEmi)
@@ -260,6 +267,7 @@ def unregister():
     bpy.utils.unregister_class(RenderBC)
     del bpy.types.Object.simple_bake_resolution
     del bpy.types.Object.simple_bake_image_name
+    del bpy.types.Object.simple_bake_image_res
 
 if __name__ == "__main__":
     register()
