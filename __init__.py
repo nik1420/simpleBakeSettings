@@ -19,10 +19,10 @@ class RenderBC(bpy.types.Operator):#Метод для РЕНДЕРА цвета 
         else:
             old_cam = None
         mat = context.active_object.active_material#забираем материал с выбранного объекта
-        bpy.ops.mesh.primitive_plane_add(location=[0,0,-12])#создаем плейн
+        bpy.ops.mesh.primitive_plane_add(location=[0,0,-12])#создаем плейн OFFSET FOR RENDER PLANE
         plane_obj = context.object
         context.active_object.data.materials.append(mat)
-        bpy.ops.object.camera_add(location=[0,0,-9.2222],rotation=[0,0,0])#создаем камеру
+        bpy.ops.object.camera_add(location=[0,0,-9.2222],rotation=[0,0,0])#создаем камеру OFFSET FOR RENDER CAMERA
         camera_obj = context.object
 
         context.scene.camera = camera_obj
