@@ -14,13 +14,17 @@ class RenderBC(bpy.types.Operator):#Метод для РЕНДЕРА цвета 
         rend_res_val = context.active_object.simple_bake_image_res
         context.scene.render.resolution_y= int(rend_res_val)
         context.scene.render.resolution_x= int(rend_res_val)
+        if(context.scene.camera):#проверяем была ли уже камера на сцене
+            old_cam = context.scene.camera
+        else:
+            old_cam = None
         mat = context.active_object.active_material#забираем материал с выбранного объекта
         bpy.ops.mesh.primitive_plane_add(location=[0,0,-12])#создаем плейн
         plane_obj = context.object
         context.active_object.data.materials.append(mat)
         bpy.ops.object.camera_add(location=[0,0,-9.2222],rotation=[0,0,0])#создаем камеру
         camera_obj = context.object
-        old_cam = context.scene.camera
+
         context.scene.camera = camera_obj
         context.scene.view_layers["ViewLayer"].use_pass_diffuse_color = True#включаем пасс цвета в слоях
         context.scene.view_layers["ViewLayer"].use_pass_normal = True# вкючаем пас нормала
@@ -32,22 +36,19 @@ class RenderBC(bpy.types.Operator):#Метод для РЕНДЕРА цвета 
         render_layers_node = None#объявление переменных для композитора
         render_viewer_node = None
         bpy.ops.render.render(animation= False,use_viewport= True)#рендерим и проверяем весь композитор
-        for node in node_tree.nodes:
-            if node.type == 'COMPOSITE':
-                if node.type == 'R_LAYERS':
-                    node_tree.links.new(render_layers_node.outputs['DiffCol'],render_viewer_node.inputs['Image'])
-                    context.scene.node_tree.nodes["view_lay"].use_alpha = False
-                    break
-            else:
-                render_layers_node = node_tree.nodes.new(type='CompositorNodeRLayers')
-                render_layers_node.label = 'ren_lay'
-                render_viewer_node = node_tree.nodes.new(type='CompositorNodeViewer')
-                render_viewer_node.label = 'view_lay'
-                node_tree.links.new(render_layers_node.outputs['DiffCol'],render_viewer_node.inputs['Image'])
-                break
+        node_tree.nodes.clear()#очищаем все ноды
+        render_layers_node = node_tree.nodes.new(type='CompositorNodeRLayers')
+        render_layers_node.name = 'Render Layers'#создаем ноду слоя
+        render_viewer_node = node_tree.nodes.new(type='CompositorNodeViewer')
+        render_viewer_node.name = 'Viewer'#и ноду вывода
+        render_viewer_node.location = (300,0)#двигаем чтоб красиво было
+        node_tree.links.new(render_layers_node.outputs['DiffCol'],render_viewer_node.inputs['Image'])#соединяем их
         bpy.data.objects.remove(plane_obj,do_unlink=True)#удаляем камеру и плейн
         bpy.data.objects.remove(camera_obj,do_unlink=True)
-        context.scene.camera = old_cam
+        if old_cam == None:#если на сцене была камера вертаем взад
+            context.scene.camera = None
+        else:
+            context.scene.camera = old_cam
         return {'FINISHED'}
 
 class RenderSettBC(bpy.types.Operator):##Запекание цвета
