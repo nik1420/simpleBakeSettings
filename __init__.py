@@ -1,34 +1,14 @@
-
+bl_info = {
+    "name": "Simple Render Set-Up",
+    "blender": (2, 80, 0),
+    "category": "Object",
+    "description":"N panel-Tool"
+}
 
 import bpy
 import mathutils
 import time
 from bpy.props import EnumProperty, StringProperty
-# Оператор для выполнения действия
-
-# bake_workspace = None
-
-# def create_workspace_if_not_exist(self, context):
-#     global bake_workspace
-    
-#     if bake_workspace:
-#         return
-    
-#     def workspace_changed(self, context):
-#         global bake_workspace
-#         bake_workspace = bpy.context.workspace
-#         bake_workspace.name = 'Baker'
-#         bpy.msgbus.clear_by_owner(self)
-#         pass
-    
-#     bpy.msgbus.subscribe_rna(
-#         key = (bpy.types.Window, "workspace"),
-#         owner=self,
-#         notify=workspace_changed,
-#         args=(self, context)
-#     )
-    
-#     pass
 
 class RenderBC(bpy.types.Operator):#Метод для РЕНДЕРА цвета на плоскости
     bl_idname = "object.renderbc"

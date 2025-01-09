@@ -2,11 +2,11 @@ schema_version = "1.0.0"
 
 # Example of manifest file for a Blender extension
 # Change the values according to your extension
-id = "setrenderbakesettings"
+id = "render_bake_settings"
 version = "1.0.0"
-name = "Setrenderbakesettings"
-tagline = "This is another extension"
-maintainer = "Zon"
+name = "Set_Render-Up"
+tagline = "Set simple bake panel,N Panel-Tools"
+maintainer = "nik1420"
 # Supported types: "add-on", "theme"
 type = "add-on"
 
@@ -15,7 +15,7 @@ type = "add-on"
 
 # Optional list defined by Blender and server, see:
 # https://docs.blender.org/manual/en/dev/advanced/extensions/tags.html
-tags = ["Animation", "Sequencer"]
+tags = ["Object", "Render"]
 
 blender_version_min = "4.2.0"
 # # Optional: Blender version that the extension does not support, earlier versions are supported.
