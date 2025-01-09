@@ -34,21 +34,28 @@ class RenderBC(bpy.types.Operator):#Метод для РЕНДЕРА цвета 
         context.scene.eevee.taa_render_samples = 16#настройки евы
         context.scene.eevee.use_shadows = False
         render_layers_node = None#объявление переменных для композитора
-        render_viewer_node = None
+        render_viewer_nodeBC = None
+        render_viewer_nodeN = None
         bpy.ops.render.render(animation= False,use_viewport= True)#рендерим и проверяем весь композитор
         node_tree.nodes.clear()#очищаем все ноды
         render_layers_node = node_tree.nodes.new(type='CompositorNodeRLayers')
         render_layers_node.name = 'Render Layers'#создаем ноду слоя
-        render_viewer_node = node_tree.nodes.new(type='CompositorNodeViewer')
-        render_viewer_node.name = 'Viewer'#и ноду вывода
-        render_viewer_node.location = (300,0)#двигаем чтоб красиво было
-        node_tree.links.new(render_layers_node.outputs['DiffCol'],render_viewer_node.inputs['Image'])#соединяем их
+        render_viewer_nodeBC = node_tree.nodes.new(type='CompositorNodeViewer')
+        render_viewer_nodeBC.label = 'ViewerBC'#и ноду вывода
+        render_viewer_nodeN = node_tree.nodes.new(type='CompositorNodeViewer')
+        render_viewer_nodeN.label = 'ViewerN'#и ноду вывода
+        render_viewer_nodeBC.location = (300,0)#двигаем чтоб красиво было
+        render_viewer_nodeN.location = (300,-200)#двигаем чтоб красиво было
+        node_tree.links.new(render_layers_node.outputs['DiffCol'],render_viewer_nodeBC.inputs['Image'])#соединяем их
+        node_tree.links.new(render_layers_node.outputs['Normal'],render_viewer_nodeN.inputs['Image'])#соединяем их
         bpy.data.objects.remove(plane_obj,do_unlink=True)#удаляем камеру и плейн
         bpy.data.objects.remove(camera_obj,do_unlink=True)
         if old_cam == None:#если на сцене была камера вертаем взад
             context.scene.camera = None
         else:
             context.scene.camera = old_cam
+        workspaces = bpy.data.workspaces#уходим в композитор чтоб забрать цвет или нормал
+        context.window.workspace = workspaces.get("Compositing")
         return {'FINISHED'}
 
 class RenderSettBC(bpy.types.Operator):##Запекание цвета
