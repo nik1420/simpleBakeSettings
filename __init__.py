@@ -9,7 +9,19 @@ import bpy
 import mathutils
 import time
 from bpy.props import EnumProperty, StringProperty
-
+import numpy as np
+bpy.types.Scene.r_name = bpy.props.StringProperty(
+    name="r_name",
+    default=""
+)
+bpy.types.Scene.m_name = bpy.props.StringProperty(
+    name="m_name",
+    default=""
+)
+bpy.types.Scene.ao_name = bpy.props.StringProperty(
+    name="ao_name",
+    default=""
+)
 class RenderBC(bpy.types.Operator):#Метод для РЕНДЕРА цвета на плоскости
     bl_idname = "object.renderbc"
     bl_label = "Simple RENDER BC/N"
@@ -158,6 +170,87 @@ class RenderSettBC(bpy.types.Operator):##Запекание цвета
                                        
         return {'FINISHED'}
     
+
+class RenderSettAO(bpy.types.Operator):##Запекание цвета
+    bl_idname = "object.rendersettao"
+    bl_label = "Simple Bake AO"
+    
+    def execute(self,context):
+        bake_target_label = context.active_object.simple_bake_image_name
+        bake_target_label_uv = bake_target_label + "_uv"
+        cur_obj = context.active_object#находим выбранный объект
+        #выставление настроек рендера
+        cyc_sett = context.scene.cycles
+        cyc_sett.device = "GPU"
+        cyc_sett.use_adaptive_sampling = False
+        cyc_sett.use_denoising = False
+        cyc_sett.samples = 400
+        cyc_sett.bake_type = 'AO'
+        context.scene.render.engine = 'CYCLES'
+        context.scene.render.bake.use_pass_direct = False
+        context.scene.render.bake.use_pass_indirect = False
+        bake_resolution = int(context.active_object.simple_bake_resolution)
+        found_image = False
+        for image in bpy.data.images:
+            if(image.name == bake_target_label):#если картинка уже существовала
+                    img = bpy.data.images.get(bake_target_label)
+                    bpy.data.images.remove(img)#удаляем ее
+                    found_image = False
+                    break
+        if(found_image == False):
+            bake_img = bpy.ops.image.new(name = bake_target_label,width=bake_resolution,height=bake_resolution)#создаем картинку
+            bpy.data.images[bake_target_label].colorspace_settings.name = "Non-Color"#назначаем нужный цветовой профиль
+        if(len(cur_obj.data.materials)>0):#если есть материал
+            for index, material in enumerate(cur_obj.data.materials):
+                #настройка материала
+                node_tree = material.node_tree#лезем в ноды
+                nodes = node_tree.nodes#и в дерево
+                if node_tree:
+                    # Ищем узел с указанным лейблом чтоб не создовать несколько
+                    found_node = None
+                    found_node1 = None
+                    for node in node_tree.nodes:
+                        if node.label == bake_target_label:
+                            found_node = node
+                            node_tree.nodes.active = found_node
+                        if node.label == bake_target_label_uv:
+                            found_node1 = node
+                            found_node1.uv_map = cur_obj.data.uv_layers.active.name
+                            break
+                        else:
+                            texture_image_my = nodes.new(type="ShaderNodeTexImage")#создаем  ноду картинки
+                            texture_image_my.label = bake_target_label
+                            uv_map_node  = nodes.new(type="ShaderNodeUVMap")#создаем ноду юв
+                            uv_map_node.label = bake_target_label_uv
+                            uv_map_node.uv_map = cur_obj.data.uv_layers.active.name#выбираем юв
+                            node_tree.links.new(uv_map_node.outputs['UV'],texture_image_my.inputs['Vector'])#соединяем юв и картинку
+                            node_tree.nodes.active = texture_image_my#делаем активной
+                            node_tree.nodes.active.image = bpy.data.images[bake_target_label]#ставим в выбранную картинку
+                            break
+        bpy.ops.object.bake(type="AO",use_clear= True) 
+########удаление использованного из материала
+        if(len(cur_obj.data.materials)>0):#если есть материал
+            for index, material in enumerate(cur_obj.data.materials):
+                #настройка материала
+                node_tree = material.node_tree#лезем в ноды
+                nodes = node_tree.nodes#и в дерево
+                if node_tree:
+                    # Ищем узел с указанным лейблом чтоб не создовать несколько
+                    found_node = None
+                    found_node1 = None
+                    for node in node_tree.nodes:
+                        if node.label == bake_target_label:
+                            found_node = node
+                            node_tree.nodes.remove(found_node)
+                        
+                    for node in node_tree.nodes:
+                        if node.label == bake_target_label_uv:
+                            found_node1 = node
+                            node_tree.nodes.remove(found_node1)
+                                       
+        return {'FINISHED'}
+
+
 class RenderSettM(bpy.types.Operator):##Запекание цвета
     bl_idname = "object.rendersettm"
     bl_label = "Simple Bake M"
@@ -522,6 +615,318 @@ class RenderEngineEevee(bpy.types.Operator):
         context.scene.eevee.use_shadows = False
         return {'FINISHED'}
     
+
+class RenderSettRMA(bpy.types.Operator):##Запекание емисии
+    bl_idname = "object.rendersettrma"
+    bl_label = "Simple Bake RMA"
+    
+    def execute(self,context):
+        bake_target_label_R = context.active_object.simple_bake_image_name + '_R'
+        bake_target_label_uv = bake_target_label_R + "_uv"
+        cur_obj = bpy.context.active_object#находим выбранный объект
+        cyc_sett = bpy.data.scenes["Scene"].cycles
+        cyc_sett.bake_type = 'ROUGHNESS'
+        cyc_sett = context.scene.cycles
+        cyc_sett.device = "GPU"
+        cyc_sett.use_adaptive_sampling = False
+        cyc_sett.use_denoising = False
+        cyc_sett.samples = 10
+        context.scene.render.engine = 'CYCLES'
+        bake_resolution = int(context.active_object.simple_bake_resolution)
+        found_image = False
+        bake_img_r = None
+        for image in bpy.data.images:
+            if(image.name == bake_target_label_R):#если картинка уже существовала
+                    img = bpy.data.images.get(bake_target_label_R)
+                    bpy.data.images.remove(img)#удаляем ее
+                    found_image = False
+                    break
+        if(found_image == False):
+            bake_img_r = bpy.ops.image.new(name = bake_target_label_R,width=bake_resolution,height=bake_resolution)#создаем картинку
+            bpy.data.images[bake_target_label_R].colorspace_settings.name = "Non-Color"#назначаем нужный цветовой профиль
+        if(len(cur_obj.data.materials)>0):#если есть материал
+            for index, material in enumerate(cur_obj.data.materials):
+                node_tree = material.node_tree#лезем в ноды
+                nodes = node_tree.nodes#и в дерево
+                if node_tree:
+                    # Ищем узел с указанным лейблом чтоб не создовать несколько
+                    found_node = None
+                    for node in node_tree.nodes:
+                        if node.label == bake_target_label_R:
+                            found_node = node
+                            node_tree.nodes.active = found_node
+                        if node.label == bake_target_label_uv:
+                            found_node1 = node
+                            found_node1.uv_map = cur_obj.data.uv_layers.active.name
+                            break
+                        else:
+                            texture_image_my = nodes.new(type="ShaderNodeTexImage")#создаем  ноду картинки
+                            texture_image_my.label = bake_target_label_R
+
+                            uv_map_node  = nodes.new(type="ShaderNodeUVMap")#создаем ноду юв
+                            uv_map_node.label = bake_target_label_uv
+                            uv_map_node.uv_map = cur_obj.data.uv_layers.active.name#выбираем юв
+
+                            node_tree.links.new(uv_map_node.outputs['UV'],texture_image_my.inputs['Vector'])#соединяем юв и картинку
+                            bake_resolution = int(context.active_object.simple_bake_resolution)
+                            
+                            node_tree.nodes.active = texture_image_my#делаем активной
+                            node_tree.nodes.active.image = bpy.data.images[bake_target_label_R]#ставим в выбранную картинку    
+                            break
+        bpy.ops.object.bake(type="ROUGHNESS",use_clear= True)
+        bpy.types.Scene.r_name = bake_target_label_R
+        bpy.data.images[bake_target_label_R].save(filepath = 'D:/baked_r.png')
+        print(bpy.context.scene.r_name)
+        ########удаление использованного из материала
+        if(len(cur_obj.data.materials)>0):#если есть материал
+            for index, material in enumerate(cur_obj.data.materials):
+                #настройка материала
+                node_tree = material.node_tree#лезем в ноды
+                nodes = node_tree.nodes#и в дерево
+                if node_tree:
+                    # Ищем узел с указанным лейблом чтоб не создовать несколько
+                    found_node = None
+                    found_node1 = None
+                    for node in node_tree.nodes:
+                        if node.label == bake_target_label_R:
+                            found_node = node
+                            node_tree.nodes.remove(found_node)
+                        
+                    for node in node_tree.nodes:
+                        if node.label == bake_target_label_uv:
+                            found_node1 = node
+                            node_tree.nodes.remove(found_node1)
+
+
+
+
+        bake_target_label_m = context.active_object.simple_bake_image_name + '_M'
+        bake_target_label_uv = bake_target_label_m + "_uv"
+        cur_obj = context.active_object#находим выбранный объект
+        #выставление настроек рендера
+        cyc_sett = context.scene.cycles
+        cyc_sett.device = "GPU"
+        cyc_sett.use_adaptive_sampling = False
+        cyc_sett.use_denoising = False
+        cyc_sett.samples = 10
+        cyc_sett.bake_type = 'DIFFUSE'
+        context.scene.render.engine = 'CYCLES'
+        context.scene.render.bake.use_pass_direct = False
+        context.scene.render.bake.use_pass_indirect = False
+        node_tree = None
+        connected_node_basecolor = None
+        connected_socket_basecolor = None
+        principled_node = None
+        bake_resolution = int(context.active_object.simple_bake_resolution)
+        found_image = False
+        bake_img_m = None
+        for image in bpy.data.images:
+            if(image.name == bake_target_label_m):#если картинка уже существовала
+                img = bpy.data.images.get(bake_target_label_m)
+                bpy.data.images.remove(img)#удаляем ее
+                found_image = False
+                break
+        if(found_image == False):
+            bake_img_m = bpy.ops.image.new(name = bake_target_label_m,width=bake_resolution,height=bake_resolution)#создаем картинку
+            bpy.data.images[bake_target_label_m].colorspace_settings.name = "Non-Color"#назначаем нужный цветовой профиль
+        if(len(cur_obj.data.materials)>0):#если есть материал
+            for index, material in enumerate(cur_obj.data.materials):
+                #настройка материала
+                node_tree = material.node_tree#лезем в ноды
+                nodes = node_tree.nodes#и в дерево
+                if node_tree:
+                    # Ищем узел с указанным лейблом чтоб не создовать несколько
+                    found_node = None
+                    found_node1 = None
+                    for node in node_tree.nodes:
+                        if node.label == bake_target_label_m:
+                            found_node = node
+                            node_tree.nodes.active = found_node
+                        if node.label == bake_target_label_uv:
+                            found_node1 = node
+                            found_node1.uv_map = cur_obj.data.uv_layers.active.name
+                            break
+                        else:
+                            ########################################################################################### Поиск и пересоединение Металика
+                            principled_node = node_tree.nodes.get("Principled BSDF")#нашли общую ноду
+                            metalic_input = principled_node.inputs.get("Metallic")#нашли вход металик
+                            base_color_input = principled_node.inputs.get("Base Color")#нашли вход Base color
+                            connected_node_metalic= None#ищем подключенную ноду к металику
+                            connected_socket_metalic = None#ищем ее название
+                            if base_color_input.is_linked:#если есть какоенибудь соединение
+                                link = base_color_input.links[0]  # Берём первое соединение
+                                connected_node_basecolor = link.from_node  # Нода, откуда идёт связь
+                                connected_socket_basecolor = link.from_socket.name  # имя, откуда идёт связь
+                            if metalic_input.is_linked:#если есть какоенибудь соединение
+                                link = metalic_input.links[0]  # Берём первое соединение
+                                connected_node_metalic = link.from_node  # Нода, откуда идёт связь
+                                connected_socket_metalic = link.from_socket.name  # имя, откуда идёт связь
+                            if connected_node_metalic:#если существует подключенная нода
+                                node_tree.links.new(connected_node_metalic.outputs[connected_socket_metalic],principled_node.inputs[0])#соединяем с Base color
+
+                            texture_image_my = nodes.new(type="ShaderNodeTexImage")#создаем  ноду картинки
+                            texture_image_my.label = bake_target_label_m
+                            uv_map_node  = nodes.new(type="ShaderNodeUVMap")#создаем ноду юв
+                            uv_map_node.label = bake_target_label_uv
+                            uv_map_node.uv_map = cur_obj.data.uv_layers.active.name#выбираем юв
+                            node_tree.links.new(uv_map_node.outputs['UV'],texture_image_my.inputs['Vector'])#соединяем юв и картинку
+                            node_tree.nodes.active = texture_image_my#делаем активной
+                            node_tree.nodes.active.image = bpy.data.images[bake_target_label_m]#ставим в выбранную картинку
+                            break
+        bpy.ops.object.bake(type="DIFFUSE",use_clear= True) 
+        bpy.types.Scene.m_name = bake_target_label_m
+        bpy.data.images[bake_target_label_m].save(filepath = 'D:/baked_m.png')
+        ############################################################################################Вертаем взад
+        for link in node_tree.links:
+            if link.from_socket.name ==connected_socket_metalic and link.to_socket.name == "Base Color":
+                node_tree.links.remove(link)
+                break
+        if connected_node_basecolor:#если существует подключенная нода
+            node_tree.links.new(connected_node_basecolor.outputs[connected_socket_basecolor],principled_node.inputs["Base Color"])#соединяем с Base color
+        ###########################################################################################
+########удаление использованного из материала
+        if(len(cur_obj.data.materials)>0):#если есть материал
+            for index, material in enumerate(cur_obj.data.materials):
+                #настройка материала
+                node_tree = material.node_tree#лезем в ноды
+                nodes = node_tree.nodes#и в дерево
+                if node_tree:
+                    # Ищем узел с указанным лейблом чтоб не создовать несколько
+                    found_node = None
+                    found_node1 = None
+                    for node in node_tree.nodes:
+                        if node.label == bake_target_label_m:
+                            found_node = node
+                            node_tree.nodes.remove(found_node)
+                        
+                    for node in node_tree.nodes:
+                        if node.label == bake_target_label_uv:
+                            found_node1 = node
+                            node_tree.nodes.remove(found_node1)
+
+        bake_target_label_ao = context.active_object.simple_bake_image_name + '_AO'
+        bake_target_label_uv = bake_target_label_ao + "_uv"
+        cur_obj = context.active_object#находим выбранный объект
+        #выставление настроек рендера
+        cyc_sett = context.scene.cycles
+        cyc_sett.device = "GPU"
+        cyc_sett.use_adaptive_sampling = False
+        cyc_sett.use_denoising = False
+        cyc_sett.samples = 400
+        cyc_sett.bake_type = 'AO'
+        context.scene.render.engine = 'CYCLES'
+        context.scene.render.bake.use_pass_direct = False
+        context.scene.render.bake.use_pass_indirect = False
+        bake_resolution = int(context.active_object.simple_bake_resolution)
+        found_image = False
+        bake_img_ao = None
+        for image in bpy.data.images:
+            if(image.name == bake_target_label_ao):#если картинка уже существовала
+                    img = bpy.data.images.get(bake_target_label_ao)
+                    bpy.data.images.remove(img)#удаляем ее
+                    found_image = False
+                    break
+        if(found_image == False):
+            bake_img_ao = bpy.ops.image.new(name = bake_target_label_ao,width=bake_resolution,height=bake_resolution)#создаем картинку
+            bpy.data.images[bake_target_label_ao].colorspace_settings.name = "Non-Color"#назначаем нужный цветовой профиль
+        if(len(cur_obj.data.materials)>0):#если есть материал
+            for index, material in enumerate(cur_obj.data.materials):
+                #настройка материала
+                node_tree = material.node_tree#лезем в ноды
+                nodes = node_tree.nodes#и в дерево
+                if node_tree:
+                    # Ищем узел с указанным лейблом чтоб не создовать несколько
+                    found_node = None
+                    found_node1 = None
+                    for node in node_tree.nodes:
+                        if node.label == bake_target_label_ao:
+                            found_node = node
+                            node_tree.nodes.active = found_node
+                        if node.label == bake_target_label_uv:
+                            found_node1 = node
+                            found_node1.uv_map = cur_obj.data.uv_layers.active.name
+                            break
+                        else:
+                            texture_image_my = nodes.new(type="ShaderNodeTexImage")#создаем  ноду картинки
+                            texture_image_my.label = bake_target_label_ao
+                            uv_map_node  = nodes.new(type="ShaderNodeUVMap")#создаем ноду юв
+                            uv_map_node.label = bake_target_label_uv
+                            uv_map_node.uv_map = cur_obj.data.uv_layers.active.name#выбираем юв
+                            node_tree.links.new(uv_map_node.outputs['UV'],texture_image_my.inputs['Vector'])#соединяем юв и картинку
+                            node_tree.nodes.active = texture_image_my#делаем активной
+                            node_tree.nodes.active.image = bpy.data.images[bake_target_label_ao]#ставим в выбранную картинку
+                            break
+        bpy.ops.object.bake(type="AO",use_clear= True) 
+        bpy.types.Scene.ao_name = bake_target_label_ao
+        bpy.data.images[bake_target_label_ao].save(filepath = 'D:/baked_ao.png')
+########удаление использованного из материала
+        if(len(cur_obj.data.materials)>0):#если есть материал
+            for index, material in enumerate(cur_obj.data.materials):
+                #настройка материала
+                node_tree = material.node_tree#лезем в ноды
+                nodes = node_tree.nodes#и в дерево
+                if node_tree:
+                    # Ищем узел с указанным лейблом чтоб не создовать несколько
+                    found_node = None
+                    found_node1 = None
+                    for node in node_tree.nodes:
+                        if node.label == bake_target_label_ao:
+                            found_node = node
+                            node_tree.nodes.remove(found_node)
+                        
+                    for node in node_tree.nodes:
+                        if node.label == bake_target_label_uv:
+                            found_node1 = node
+                            node_tree.nodes.remove(found_node1)   
+
+        return {'FINISHED'}
+
+class CombineIMG(bpy.types.Operator):
+    bl_idname = "object.combinator"
+    bl_label = "Combine RMA"
+    def execute(self, context):
+        print(bpy.context.scene.r_name)
+        image_paths = {
+    "R": "D:/baked_r.png",  # Красный канал
+    "G": "D:/baked_m.png",  # Зелёный канал
+    "B": "D:/baked_ao.png",  # Синий канал
+}
+        image_paths_local = {
+    "R":bpy.types.Scene.r_name,  # Красный канал
+    "G":bpy.types.Scene.m_name,  # Зелёный канал
+    "B":bpy.types.Scene.ao_name,  # Синий канал
+}
+        combined_image = None
+        #images = {channel: bpy.data.images.load(path) for channel, path in image_paths.items()}
+        images = {channel: bpy.data.images[name] for channel, name in image_paths_local.items()}
+        width, height = images["R"].size
+        channels = {}
+        for channel, img in images.items():
+            pixels = np.array(img.pixels[:])  # Извлекаем пиксели
+            channels[channel] = pixels[::4]  # Берём только нужный канал (каждый 4-й элемент)
+        result_pixels = np.zeros((width * height * 4,), dtype=np.float32)
+        result_pixels[0::4] = channels.get("R", 0)  # Красный
+        result_pixels[1::4] = channels.get("G", 0)  # Зелёный
+        result_pixels[2::4] = channels.get("B", 0)  # Синий
+        result_pixels[3::4] = channels.get("A", 1)  # Альфа (по умолчанию 1)
+
+        found_image = False
+        for image in bpy.data.images:
+            if(image.name == "CombinedImage"):#если картинка уже существовала
+                    img = bpy.data.images.get("CombinedImage")
+                    bpy.data.images.remove(img)#удаляем ее
+                    found_image = False
+                    break
+        if(found_image == False):
+            combined_image = bpy.data.images.new("CombinedImage", width=width, height=height)#создаем картинку
+
+        combined_image.pixels = result_pixels.tolist()
+
+        return {'FINISHED'}
+
+
+
+
 # Панель для добавления кнопки
 class OBJECT_PT_CustomPanel(bpy.types.Panel):
     bl_label = "Set Render Settings For Bake"
@@ -545,6 +950,9 @@ class OBJECT_PT_CustomPanel(bpy.types.Panel):
                 layout.operator("object.rendersettnorm", icon='RESTRICT_RENDER_OFF')
                 layout.operator("object.rendersettm", icon='RESTRICT_RENDER_OFF')
                 layout.operator("object.rendersettrough", icon='RESTRICT_RENDER_OFF')
+                layout.operator("object.rendersettao", icon='RESTRICT_RENDER_OFF')
+                layout.operator("object.rendersettrma", icon='RESTRICT_RENDER_OFF')
+                layout.operator("object.combinator", icon='RESTRICT_RENDER_OFF')
                 layout.split(factor=0.1)
                 box = layout.box()
                 row = box.row()
@@ -565,18 +973,15 @@ def register():
     bpy.utils.register_class(RenderSettNorm)
     bpy.utils.register_class(RenderSettM)
     bpy.utils.register_class(RenderSettRough)
+    bpy.utils.register_class(RenderSettAO)
+    bpy.utils.register_class(RenderSettRMA)
+    bpy.utils.register_class(CombineIMG)
     bpy.utils.register_class(OBJECT_PT_CustomPanel)
     bpy.utils.register_class(RenderBC)
     bpy.utils.register_class(RenderEngineCycles)
     bpy.utils.register_class(RenderEngineEevee)
     
     register_properties()
-    
-    ## Properties
-        
-    ## Methods
-    
-    #create_workspace_for_baker()
     
     pass
 
@@ -587,6 +992,9 @@ def unregister():
     bpy.utils.unregister_class(RenderSettNorm)
     bpy.utils.unregister_class(RenderSettM)
     bpy.utils.unregister_class(RenderSettRough)
+    bpy.utils.unregister_class(RenderSettAO)
+    bpy.utils.unregister_class(RenderSettRMA)
+    bpy.utils.unregister_class(CombineIMG)
     bpy.utils.unregister_class(OBJECT_PT_CustomPanel)
     bpy.utils.unregister_class(RenderBC)
     bpy.utils.unregister_class(RenderEngineCycles)
