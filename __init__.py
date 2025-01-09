@@ -6,6 +6,30 @@ import time
 from bpy.props import EnumProperty, StringProperty
 # Оператор для выполнения действия
 
+# bake_workspace = None
+
+# def create_workspace_if_not_exist(self, context):
+#     global bake_workspace
+    
+#     if bake_workspace:
+#         return
+    
+#     def workspace_changed(self, context):
+#         global bake_workspace
+#         bake_workspace = bpy.context.workspace
+#         bake_workspace.name = 'Baker'
+#         bpy.msgbus.clear_by_owner(self)
+#         pass
+    
+#     bpy.msgbus.subscribe_rna(
+#         key = (bpy.types.Window, "workspace"),
+#         owner=self,
+#         notify=workspace_changed,
+#         args=(self, context)
+#     )
+    
+#     pass
+
 class RenderBC(bpy.types.Operator):#Метод для РЕНДЕРА цвета на плоскости
     bl_idname = "object.renderbc"
     bl_label = "Simple RENDER BC/N"
@@ -53,7 +77,26 @@ class RenderBC(bpy.types.Operator):#Метод для РЕНДЕРА цвета 
         else:
             context.scene.camera = old_cam
         workspaces = bpy.data.workspaces#уходим в композитор чтоб забрать цвет или нормал
+        
+        def on_workspace_changed(self, context):
+            if context.window.workspace == workspaces.get("Compositing"):
+                for area in bpy.context.screen.areas:
+                    if area.type == 'DOPESHEET_EDITOR':
+                        area.type = 'IMAGE_EDITOR'
+                
+            bpy.msgbus.clear_by_owner(self)
+            pass
+        
+        bpy.msgbus.subscribe_rna(
+            key = (bpy.types.Window, "workspace"),
+            owner=self,
+            notify=on_workspace_changed,
+            args=(self, context)
+        )
+        
+        #create_workspace_if_not_exist(self, context)
         context.window.workspace = workspaces.get("Compositing")
+    
         return {'FINISHED'}
 
 class RenderSettBC(bpy.types.Operator):##Запекание цвета
@@ -340,6 +383,8 @@ class OBJECT_PT_CustomPanel(bpy.types.Panel):
 
 # Регистрация классов
 def register():
+    ## Classes
+    
     bpy.utils.register_class(RenderSettEmi)
     bpy.utils.register_class(RenderSettBC)
     bpy.utils.register_class(RenderSettNorm)
@@ -347,6 +392,31 @@ def register():
     bpy.utils.register_class(RenderBC)
     bpy.utils.register_class(RenderEngineCycles)
     bpy.utils.register_class(RenderEngineEevee)
+    
+    register_properties()
+    
+    ## Properties
+        
+    ## Methods
+    
+    #create_workspace_for_baker()
+    
+    pass
+
+
+def unregister():
+    bpy.utils.unregister_class(RenderSettEmi)
+    bpy.utils.unregister_class(RenderSettBC)
+    bpy.utils.unregister_class(RenderSettNorm)
+    bpy.utils.unregister_class(OBJECT_PT_CustomPanel)
+    bpy.utils.unregister_class(RenderBC)
+    bpy.utils.unregister_class(RenderEngineCycles)
+    bpy.utils.unregister_class(RenderEngineEevee)
+    
+    unregister_properties()
+    
+
+def register_properties():
     bpy.types.Object.simple_bake_resolution = EnumProperty(
         name="Resolution",
         items=(
@@ -369,18 +439,14 @@ def register():
         name = "Render Resolution",
         default="1024"
     )
+    pass
 
-def unregister():
-    bpy.utils.unregister_class(RenderSettEmi)
-    bpy.utils.unregister_class(RenderSettBC)
-    bpy.utils.unregister_class(RenderSettNorm)
-    bpy.utils.unregister_class(OBJECT_PT_CustomPanel)
-    bpy.utils.unregister_class(RenderBC)
-    bpy.utils.unregister_class(RenderEngineCycles)
-    bpy.utils.unregister_class(RenderEngineEevee)
+
+def unregister_properties():
     del bpy.types.Object.simple_bake_resolution
     del bpy.types.Object.simple_bake_image_name
     del bpy.types.Object.simple_bake_image_res
+    pass
 
 if __name__ == "__main__":
     register()
