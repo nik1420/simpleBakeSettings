@@ -8,7 +8,7 @@ from bpy.props import EnumProperty, StringProperty
 
 class RenderBC(bpy.types.Operator):#Метод для РЕНДЕРА цвета на плоскости
     bl_idname = "object.renderbc"
-    bl_label = "Simple RENDER BC"
+    bl_label = "Simple RENDER BC/N"
 
     def execute(self, context):
         rend_res_val = context.active_object.simple_bake_image_res
@@ -30,9 +30,7 @@ class RenderBC(bpy.types.Operator):#Метод для РЕНДЕРА цвета 
         context.scene.view_layers["ViewLayer"].use_pass_normal = True# вкючаем пас нормала
         context.scene.use_nodes = True
         node_tree = context.scene.node_tree
-        context.scene.render.engine = 'BLENDER_EEVEE_NEXT'#включаем еву
-        context.scene.eevee.taa_render_samples = 16#настройки евы
-        context.scene.eevee.use_shadows = False
+
         render_layers_node = None#объявление переменных для композитора
         render_viewer_nodeBC = None
         render_viewer_nodeN = None
@@ -286,6 +284,28 @@ class RenderSettNorm(bpy.types.Operator):##Запекание нормала
                             node_tree.nodes.remove(found_node1)
         return {'FINISHED'}
 
+class RenderEngineCycles(bpy.types.Operator):
+    bl_idname = "object.re_cycles"
+    bl_label = "Set Cycles"
+    def execute(self, context):
+        context.scene.render.engine = 'CYCLES'
+        cyc_sett = context.scene.cycles
+        cyc_sett = bpy.data.scenes["Scene"].cycles
+        cyc_sett.device = "GPU"
+        cyc_sett.use_adaptive_sampling = False
+        cyc_sett.use_denoising = False
+        cyc_sett.samples = 10
+        return {'FINISHED'}
+    
+class RenderEngineEevee(bpy.types.Operator):
+    bl_idname = "object.re_eevee"
+    bl_label = "Set Eevee"
+    def execute(self, context):
+        context.scene.render.engine = 'BLENDER_EEVEE_NEXT'#включаем еву
+        context.scene.eevee.taa_render_samples = 16#настройки евы
+        context.scene.eevee.use_shadows = False
+        return {'FINISHED'}
+    
 # Панель для добавления кнопки
 class OBJECT_PT_CustomPanel(bpy.types.Panel):
     bl_label = "Set Render Settings For Bake"
@@ -312,6 +332,8 @@ class OBJECT_PT_CustomPanel(bpy.types.Panel):
                 row = box.row()
                 row.prop(context.active_object, 'simple_bake_image_res', text="Render Resolution")
                 box.operator("object.renderbc")
+                box.operator("object.re_cycles")
+                box.operator("object.re_eevee")
         else:
             row = layout.row()
             row.label(text = "No object selected")
@@ -323,6 +345,8 @@ def register():
     bpy.utils.register_class(RenderSettNorm)
     bpy.utils.register_class(OBJECT_PT_CustomPanel)
     bpy.utils.register_class(RenderBC)
+    bpy.utils.register_class(RenderEngineCycles)
+    bpy.utils.register_class(RenderEngineEevee)
     bpy.types.Object.simple_bake_resolution = EnumProperty(
         name="Resolution",
         items=(
@@ -352,6 +376,8 @@ def unregister():
     bpy.utils.unregister_class(RenderSettNorm)
     bpy.utils.unregister_class(OBJECT_PT_CustomPanel)
     bpy.utils.unregister_class(RenderBC)
+    bpy.utils.unregister_class(RenderEngineCycles)
+    bpy.utils.unregister_class(RenderEngineEevee)
     del bpy.types.Object.simple_bake_resolution
     del bpy.types.Object.simple_bake_image_name
     del bpy.types.Object.simple_bake_image_res
