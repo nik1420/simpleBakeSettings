@@ -1020,7 +1020,7 @@ class OBJECT_PT_CustomPanel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        if bpy.context.active_object:
+        if bpy.context.active_object in bpy.context.selected_objects:
             if(bpy.context.active_object.type != "CAMERA" and bpy.context.active_object.type != "LIGHT"):
                 #layout.prop(bpy.data.scenes["Scene"], 'name', text='Разрешение')
                 row = layout.row()
