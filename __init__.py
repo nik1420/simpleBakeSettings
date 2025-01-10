@@ -91,6 +91,86 @@ class RenderBC(bpy.types.Operator):#Метод для РЕНДЕРА цвета 
     
         return {'FINISHED'}
 
+class RenderSettSelfEmi(bpy.types.Operator):##Запекание цвета
+    bl_idname = "object.rendersettselfemi"
+    bl_label = "Simple Bake SELF EMISSION"
+    
+    def execute(self,context):
+        bake_target_label = context.active_object.simple_bake_image_name
+        bake_target_label_uv = bake_target_label + "_uv"
+        cur_obj = context.active_object#находим выбранный объект
+        #выставление настроек рендера
+        cyc_sett = context.scene.cycles
+        cyc_sett.device = "GPU"
+        cyc_sett.use_adaptive_sampling = False
+        cyc_sett.use_denoising = False
+        cyc_sett.samples = 10
+        cyc_sett.bake_type = 'COMBINED'
+        context.scene.render.engine = 'CYCLES'
+        context.scene.render.bake.use_pass_direct = True
+        context.scene.render.bake.use_pass_indirect = False
+        context.scene.render.bake.use_pass_color = False
+        bake_resolution = int(context.active_object.simple_bake_resolution)
+        found_image = False
+        for image in bpy.data.images:
+            if(image.name == bake_target_label):#если картинка уже существовала
+                    img = bpy.data.images.get(bake_target_label)
+                    bpy.data.images.remove(img)#удаляем ее
+                    found_image = False
+                    break
+        if(found_image == False):
+            bake_img = bpy.ops.image.new(name = bake_target_label,width=bake_resolution,height=bake_resolution)#создаем картинку
+            bpy.data.images[bake_target_label].colorspace_settings.name = "sRGB"#назначаем нужный цветовой профиль
+        if(len(cur_obj.data.materials)>0):#если есть материал
+            for index, material in enumerate(cur_obj.data.materials):
+                #настройка материала
+                node_tree = material.node_tree#лезем в ноды
+                nodes = node_tree.nodes#и в дерево
+                if node_tree:
+                    # Ищем узел с указанным лейблом чтоб не создовать несколько
+                    found_node = None
+                    found_node1 = None
+                    for node in node_tree.nodes:
+                        if node.label == bake_target_label:
+                            found_node = node
+                            node_tree.nodes.active = found_node
+                        if node.label == bake_target_label_uv:
+                            found_node1 = node
+                            found_node1.uv_map = cur_obj.data.uv_layers.active.name
+                            break
+                        else:
+                            texture_image_my = nodes.new(type="ShaderNodeTexImage")#создаем  ноду картинки
+                            texture_image_my.label = bake_target_label
+                            uv_map_node  = nodes.new(type="ShaderNodeUVMap")#создаем ноду юв
+                            uv_map_node.label = bake_target_label_uv
+                            uv_map_node.uv_map = cur_obj.data.uv_layers.active.name#выбираем юв
+                            node_tree.links.new(uv_map_node.outputs['UV'],texture_image_my.inputs['Vector'])#соединяем юв и картинку
+                            node_tree.nodes.active = texture_image_my#делаем активной
+                            node_tree.nodes.active.image = bpy.data.images[bake_target_label]#ставим в выбранную картинку
+                            break
+        bpy.ops.object.bake(type="COMBINED",use_clear= True) 
+########удаление использованного из материала
+        if(len(cur_obj.data.materials)>0):#если есть материал
+            for index, material in enumerate(cur_obj.data.materials):
+                #настройка материала
+                node_tree = material.node_tree#лезем в ноды
+                nodes = node_tree.nodes#и в дерево
+                if node_tree:
+                    # Ищем узел с указанным лейблом чтоб не создовать несколько
+                    found_node = None
+                    found_node1 = None
+                    for node in node_tree.nodes:
+                        if node.label == bake_target_label:
+                            found_node = node
+                            node_tree.nodes.remove(found_node)
+                        
+                    for node in node_tree.nodes:
+                        if node.label == bake_target_label_uv:
+                            found_node1 = node
+                            node_tree.nodes.remove(found_node1)
+                                       
+        return {'FINISHED'}
+
 class RenderSettBC(bpy.types.Operator):##Запекание цвета
     bl_idname = "object.rendersettbc"
     bl_label = "Simple Bake BC"
@@ -938,13 +1018,14 @@ class OBJECT_PT_CustomPanel(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         if bpy.context.active_object:
-            if(bpy.context.active_object.type != "CAMERA"):
+            if(bpy.context.active_object.type != "CAMERA" and bpy.context.active_object.type != "LIGHT"):
                 #layout.prop(bpy.data.scenes["Scene"], 'name', text='Разрешение')
                 row = layout.row()
                 row.prop(context.active_object, 'simple_bake_resolution', text='Resolution', icon='OBJECT_HIDDEN')
                 row = layout.row()
                 row.prop(context.active_object, 'simple_bake_image_name', text="Image name", icon= 'NODE_TEXTURE')
                 layout.prop(bpy.context.active_object.data.uv_layers,'active_index',text = "UV Map")
+                layout.operator("object.rendersettselfemi", icon='RESTRICT_RENDER_OFF')
                 layout.operator("object.rendersettbc", icon='RESTRICT_RENDER_OFF')
                 layout.operator("object.rendersettemi", icon='RESTRICT_RENDER_OFF')
                 layout.operator("object.rendersettnorm", icon='RESTRICT_RENDER_OFF')
@@ -969,6 +1050,7 @@ def register():
     ## Classes
     
     bpy.utils.register_class(RenderSettEmi)
+    bpy.utils.register_class(RenderSettSelfEmi)
     bpy.utils.register_class(RenderSettBC)
     bpy.utils.register_class(RenderSettNorm)
     bpy.utils.register_class(RenderSettM)
@@ -988,6 +1070,7 @@ def register():
 
 def unregister():
     bpy.utils.unregister_class(RenderSettEmi)
+    bpy.utils.unregister_class(RenderSettSelfEmi)
     bpy.utils.unregister_class(RenderSettBC)
     bpy.utils.unregister_class(RenderSettNorm)
     bpy.utils.unregister_class(RenderSettM)
