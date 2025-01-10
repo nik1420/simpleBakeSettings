@@ -189,8 +189,8 @@ class RenderSettBC(bpy.types.Operator):##Запекание цвета
         cyc_sett.samples = samples
         cyc_sett.bake_type = 'DIFFUSE'
         context.scene.render.engine = 'CYCLES'
-        context.scene.render.bake.use_pass_direct = False
-        context.scene.render.bake.use_pass_indirect = False
+        context.scene.render.bake.use_pass_direct = True
+        context.scene.render.bake.use_pass_indirect = True
         context.scene.render.bake.use_pass_color = True
         bake_resolution = int(context.active_object.simple_bake_resolution)
         found_image = False
