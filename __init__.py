@@ -96,6 +96,7 @@ class RenderSettSelfEmi(bpy.types.Operator):##Запекание цвета
     bl_label = "Simple Bake SELF EMISSION"
     
     def execute(self,context):
+        samples = int(context.active_object.samples)
         bake_target_label = context.active_object.simple_bake_image_name
         bake_target_label_uv = bake_target_label + "_uv"
         cur_obj = context.active_object#находим выбранный объект
@@ -104,7 +105,7 @@ class RenderSettSelfEmi(bpy.types.Operator):##Запекание цвета
         cyc_sett.device = "GPU"
         cyc_sett.use_adaptive_sampling = False
         cyc_sett.use_denoising = False
-        cyc_sett.samples = 10
+        cyc_sett.samples = samples
         cyc_sett.bake_type = 'COMBINED'
         context.scene.render.engine = 'CYCLES'
         context.scene.render.bake.use_pass_direct = True
@@ -176,6 +177,7 @@ class RenderSettBC(bpy.types.Operator):##Запекание цвета
     bl_label = "Simple Bake BC"
     
     def execute(self,context):
+        samples = int(context.active_object.samples)
         bake_target_label = context.active_object.simple_bake_image_name
         bake_target_label_uv = bake_target_label + "_uv"
         cur_obj = context.active_object#находим выбранный объект
@@ -184,11 +186,12 @@ class RenderSettBC(bpy.types.Operator):##Запекание цвета
         cyc_sett.device = "GPU"
         cyc_sett.use_adaptive_sampling = False
         cyc_sett.use_denoising = False
-        cyc_sett.samples = 10
+        cyc_sett.samples = samples
         cyc_sett.bake_type = 'DIFFUSE'
         context.scene.render.engine = 'CYCLES'
         context.scene.render.bake.use_pass_direct = False
         context.scene.render.bake.use_pass_indirect = False
+        context.scene.render.bake.use_pass_color = True
         bake_resolution = int(context.active_object.simple_bake_resolution)
         found_image = False
         for image in bpy.data.images:
@@ -256,6 +259,7 @@ class RenderSettAO(bpy.types.Operator):##Запекание цвета
     bl_label = "Simple Bake AO"
     
     def execute(self,context):
+        samples = int(context.active_object.samples)
         bake_target_label = context.active_object.simple_bake_image_name
         bake_target_label_uv = bake_target_label + "_uv"
         cur_obj = context.active_object#находим выбранный объект
@@ -264,11 +268,9 @@ class RenderSettAO(bpy.types.Operator):##Запекание цвета
         cyc_sett.device = "GPU"
         cyc_sett.use_adaptive_sampling = False
         cyc_sett.use_denoising = False
-        cyc_sett.samples = 400
+        cyc_sett.samples = samples
         cyc_sett.bake_type = 'AO'
         context.scene.render.engine = 'CYCLES'
-        context.scene.render.bake.use_pass_direct = False
-        context.scene.render.bake.use_pass_indirect = False
         bake_resolution = int(context.active_object.simple_bake_resolution)
         found_image = False
         for image in bpy.data.images:
@@ -336,6 +338,7 @@ class RenderSettM(bpy.types.Operator):##Запекание цвета
     bl_label = "Simple Bake M"
     
     def execute(self,context):
+        samples = int(context.active_object.samples)
         bake_target_label = context.active_object.simple_bake_image_name
         bake_target_label_uv = bake_target_label + "_uv"
         cur_obj = context.active_object#находим выбранный объект
@@ -344,11 +347,12 @@ class RenderSettM(bpy.types.Operator):##Запекание цвета
         cyc_sett.device = "GPU"
         cyc_sett.use_adaptive_sampling = False
         cyc_sett.use_denoising = False
-        cyc_sett.samples = 10
+        cyc_sett.samples = samples
         cyc_sett.bake_type = 'DIFFUSE'
         context.scene.render.engine = 'CYCLES'
         context.scene.render.bake.use_pass_direct = False
         context.scene.render.bake.use_pass_indirect = False
+        context.scene.render.bake.use_pass_color = True
         node_tree = None
         connected_node_basecolor = None
         connected_socket_basecolor = None
@@ -445,6 +449,7 @@ class RenderSettEmi(bpy.types.Operator):##Запекание емисии
     bl_label = "Simple Bake Emi"
     
     def execute(self,context):
+        samples = int(context.active_object.samples)
         bake_target_label = context.active_object.simple_bake_image_name
         bake_target_label_uv = bake_target_label + "_uv"
         cur_obj = bpy.context.active_object#находим выбранный объект
@@ -454,7 +459,7 @@ class RenderSettEmi(bpy.types.Operator):##Запекание емисии
         cyc_sett.device = "GPU"
         cyc_sett.use_adaptive_sampling = False
         cyc_sett.use_denoising = False
-        cyc_sett.samples = 10
+        cyc_sett.samples = samples
         context.scene.render.engine = 'CYCLES'
         bake_resolution = int(context.active_object.simple_bake_resolution)
         found_image = False
@@ -523,6 +528,7 @@ class RenderSettRough(bpy.types.Operator):##Запекание емисии
     bl_label = "Simple Bake R"
     
     def execute(self,context):
+        samples = int(context.active_object.samples)
         bake_target_label = context.active_object.simple_bake_image_name
         bake_target_label_uv = bake_target_label + "_uv"
         cur_obj = bpy.context.active_object#находим выбранный объект
@@ -532,7 +538,7 @@ class RenderSettRough(bpy.types.Operator):##Запекание емисии
         cyc_sett.device = "GPU"
         cyc_sett.use_adaptive_sampling = False
         cyc_sett.use_denoising = False
-        cyc_sett.samples = 10
+        cyc_sett.samples = samples
         context.scene.render.engine = 'CYCLES'
         bake_resolution = int(context.active_object.simple_bake_resolution)
         found_image = False
@@ -601,6 +607,7 @@ class RenderSettNorm(bpy.types.Operator):##Запекание нормала
     bl_label = "Simple Bake Normal"
     
     def execute(self,context):
+        samples = int(context.active_object.samples)
         bake_target_label = context.active_object.simple_bake_image_name
         bake_target_label_uv = bake_target_label + "_uv"
         cur_obj = bpy.context.active_object#находим выбранный объект
@@ -610,7 +617,7 @@ class RenderSettNorm(bpy.types.Operator):##Запекание нормала
         cyc_sett.device = "GPU"
         cyc_sett.use_adaptive_sampling = False
         cyc_sett.use_denoising = False
-        cyc_sett.samples = 10
+        cyc_sett.samples = samples
         context.scene.render.engine = 'CYCLES'
         bake_resolution = int(context.active_object.simple_bake_resolution)
         found_image = False
@@ -677,13 +684,14 @@ class RenderEngineCycles(bpy.types.Operator):
     bl_idname = "object.re_cycles"
     bl_label = "Set Cycles"
     def execute(self, context):
+        samples = int(context.active_object.samples)
         context.scene.render.engine = 'CYCLES'
         cyc_sett = context.scene.cycles
         cyc_sett = bpy.data.scenes["Scene"].cycles
         cyc_sett.device = "GPU"
         cyc_sett.use_adaptive_sampling = False
         cyc_sett.use_denoising = False
-        cyc_sett.samples = 10
+        cyc_sett.samples = samples
         return {'FINISHED'}
     
 class RenderEngineEevee(bpy.types.Operator):
@@ -701,6 +709,7 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
     bl_label = "Simple Bake RMA"
     
     def execute(self,context):
+        samples = int(context.active_object.samples)
         bake_target_label_R = context.active_object.simple_bake_image_name + '_R'
         bake_target_label_uv = bake_target_label_R + "_uv"
         cur_obj = bpy.context.active_object#находим выбранный объект
@@ -710,7 +719,7 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
         cyc_sett.device = "GPU"
         cyc_sett.use_adaptive_sampling = False
         cyc_sett.use_denoising = False
-        cyc_sett.samples = 10
+        cyc_sett.samples = samples
         context.scene.render.engine = 'CYCLES'
         bake_resolution = int(context.active_object.simple_bake_resolution)
         found_image = False
@@ -788,11 +797,8 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
         cyc_sett.device = "GPU"
         cyc_sett.use_adaptive_sampling = False
         cyc_sett.use_denoising = False
-        cyc_sett.samples = 10
         cyc_sett.bake_type = 'DIFFUSE'
         context.scene.render.engine = 'CYCLES'
-        context.scene.render.bake.use_pass_direct = False
-        context.scene.render.bake.use_pass_indirect = False
         node_tree = None
         connected_node_basecolor = None
         connected_socket_basecolor = None
@@ -892,11 +898,8 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
         cyc_sett.device = "GPU"
         cyc_sett.use_adaptive_sampling = False
         cyc_sett.use_denoising = False
-        cyc_sett.samples = 400
         cyc_sett.bake_type = 'AO'
         context.scene.render.engine = 'CYCLES'
-        context.scene.render.bake.use_pass_direct = False
-        context.scene.render.bake.use_pass_indirect = False
         bake_resolution = int(context.active_object.simple_bake_resolution)
         found_image = False
         bake_img_ao = None
@@ -1024,6 +1027,7 @@ class OBJECT_PT_CustomPanel(bpy.types.Panel):
                 row.prop(context.active_object, 'simple_bake_resolution', text='Resolution', icon='OBJECT_HIDDEN')
                 row = layout.row()
                 row.prop(context.active_object, 'simple_bake_image_name', text="Image name", icon= 'NODE_TEXTURE')
+                row.prop(context.active_object, 'samples', text="Samples")
                 layout.prop(bpy.context.active_object.data.uv_layers,'active_index',text = "UV Map")
                 layout.operator("object.rendersettselfemi", icon='RESTRICT_RENDER_OFF')
                 layout.operator("object.rendersettbc", icon='RESTRICT_RENDER_OFF')
@@ -1105,6 +1109,10 @@ def register_properties():
         name = "Bake Image Name",
         default="BakedImage"
     )
+    bpy.types.Object.samples = StringProperty(
+        name = "Samples",
+        default="100"
+    )
     bpy.types.Object.simple_bake_image_res = StringProperty(
         name = "Render Resolution",
         default="1024"
@@ -1116,6 +1124,7 @@ def unregister_properties():
     del bpy.types.Object.simple_bake_resolution
     del bpy.types.Object.simple_bake_image_name
     del bpy.types.Object.simple_bake_image_res
+    del bpy.types.Object.samples
     pass
 
 if __name__ == "__main__":
