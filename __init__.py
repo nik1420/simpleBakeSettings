@@ -764,7 +764,6 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
                             break
         bpy.ops.object.bake(type="ROUGHNESS",use_clear= True)
         bpy.types.Scene.r_name = bake_target_label_R
-        bpy.data.images[bake_target_label_R].save(filepath = 'D:/baked_r.png')
         print(bpy.context.scene.r_name)
         ########удаление использованного из материала
         if(len(cur_obj.data.materials)>0):#если есть материал
@@ -861,7 +860,6 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
                             break
         bpy.ops.object.bake(type="DIFFUSE",use_clear= True) 
         bpy.types.Scene.m_name = bake_target_label_m
-        bpy.data.images[bake_target_label_m].save(filepath = 'D:/baked_m.png')
         ############################################################################################Вертаем взад
         for link in node_tree.links:
             if link.from_socket.name ==connected_socket_metalic and link.to_socket.name == "Base Color":
@@ -941,7 +939,6 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
                             break
         bpy.ops.object.bake(type="AO",use_clear= True) 
         bpy.types.Scene.ao_name = bake_target_label_ao
-        bpy.data.images[bake_target_label_ao].save(filepath = 'D:/baked_ao.png')
 ########удаление использованного из материала
         if(len(cur_obj.data.materials)>0):#если есть материал
             for index, material in enumerate(cur_obj.data.materials):
