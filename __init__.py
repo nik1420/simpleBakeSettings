@@ -4,7 +4,7 @@ bl_info = {
     "category": "Object",
     "description":"N panel-Tool"
 }
-
+##еще много оптимизировать
 import bpy
 import mathutils
 import time
