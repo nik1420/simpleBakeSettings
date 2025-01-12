@@ -354,13 +354,10 @@ class RenderSettM(bpy.types.Operator):##Запекание цвета
         context.scene.render.bake.use_pass_indirect = False
         context.scene.render.bake.use_pass_color = True
         node_tree = None
-        connected_node_basecolor = None
-        connected_socket_basecolor = None
         principled_node = None
         bake_resolution = int(context.active_object.simple_bake_resolution)
         found_image = False
-        mats_bc = [None] * 10
-        mats_bc_names = [None] * 10
+        mats_bc = [None] * 100
         for image in bpy.data.images:
             if(image.name == bake_target_label):#если картинка уже существовала
                 img = bpy.data.images.get(bake_target_label)
@@ -394,14 +391,11 @@ class RenderSettM(bpy.types.Operator):##Запекание цвета
                             base_color_input = principled_node.inputs.get("Base Color")#нашли вход Base color
                             connected_node_metalic= None#ищем подключенную ноду к металику
                             connected_socket_metalic = None#ищем ее название
-                            connected_node_basecolor = None#ищем подключенную ноду к цвету
-                            connected_socket_basecolor = None#ищем ее название
                             if base_color_input.is_linked:#если есть какоенибудь соединение
                                 link = base_color_input.links[0]  # Берём первое соединение
-                                connected_node_basecolor = link.from_node  # Нода, откуда идёт связь
-                                connected_socket_basecolor = link.from_socket.name  # имя, откуда идёт связь
-                                mats_bc[index]=connected_node_basecolor
-                                mats_bc_names[index] = connected_socket_basecolor
+                                mats_bc[index*2]=link.from_node
+                                mats_bc[index*2+1]=link.from_socket.name
+                                #mats_bc_names[index] = connected_socket_basecolor
                             if metalic_input.is_linked:#если есть какоенибудь соединение
                                 link = metalic_input.links[0]  # Берём первое соединение
                                 connected_node_metalic = link.from_node  # Нода, откуда идёт связь
@@ -434,8 +428,8 @@ class RenderSettM(bpy.types.Operator):##Запекание цвета
                     if base_color_input.is_linked:#если есть какоенибудь соединение
                             link = base_color_input.links[0]  # Берём первое соединение
                             node_tree.links.remove(link)
-                            if mats_bc[index]:#соединяем с тем BC что был до запекания
-                                node_tree.links.new(mats_bc[index].outputs[mats_bc_names[index]],principled_node.inputs[0])#соединяем с Base color
+                            if mats_bc[index*2]:#соединяем с тем BC что был до запекания
+                                node_tree.links.new(mats_bc[index*2].outputs[mats_bc[index*2+1]],principled_node.inputs[0])#соединяем с Base color
         ###########################################################################################
 ########удаление использованного из материала
         if(len(cur_obj.data.materials)>0):#если есть материал
@@ -817,14 +811,11 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
         context.scene.render.bake.use_pass_indirect = False
         context.scene.render.bake.use_pass_color = True
         node_tree = None
-        connected_node_basecolor = None
-        connected_socket_basecolor = None
         principled_node = None
         bake_resolution = int(context.active_object.simple_bake_resolution)
         found_image = False
         bake_img_m = None
-        mats_bc = [None] * 10
-        mats_bc_names = [None] * 10
+        mats_bc = [None] * 100
         for image in bpy.data.images:
             if(image.name == bake_target_label_m):#если картинка уже существовала
                 img = bpy.data.images.get(bake_target_label_m)
@@ -858,14 +849,10 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
                             base_color_input = principled_node.inputs.get("Base Color")#нашли вход Base color
                             connected_node_metalic= None#ищем подключенную ноду к металику
                             connected_socket_metalic = None#ищем ее название
-                            connected_node_basecolor = None#ищем подключенную ноду к цвету
-                            connected_socket_basecolor = None#ищем ее название
                             if base_color_input.is_linked:#если есть какоенибудь соединение
                                 link = base_color_input.links[0]  # Берём первое соединение
-                                connected_node_basecolor = link.from_node  # Нода, откуда идёт связь
-                                connected_socket_basecolor = link.from_socket.name  # имя, откуда идёт связь
-                                mats_bc[index]=connected_node_basecolor
-                                mats_bc_names[index] = connected_socket_basecolor
+                                mats_bc[index*2]=link.from_node
+                                mats_bc[index*2+1]=link.from_socket.name
                             if metalic_input.is_linked:#если есть какоенибудь соединение
                                 link = metalic_input.links[0]  # Берём первое соединение
                                 connected_node_metalic = link.from_node  # Нода, откуда идёт связь
@@ -899,8 +886,8 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
                     if base_color_input.is_linked:#если есть какоенибудь соединение
                             link = base_color_input.links[0]  # Берём первое соединение
                             node_tree.links.remove(link)
-                            if mats_bc[index]:#соединяем с тем BC что был до запекания
-                                node_tree.links.new(mats_bc[index].outputs[mats_bc_names[index]],principled_node.inputs[0])#соединяем с Base color
+                            if mats_bc[index*2]:#соединяем с тем BC что был до запекания
+                                node_tree.links.new(mats_bc[index*2].outputs[mats_bc[index*2+1]],principled_node.inputs[0])#соединяем с Base color
         ###########################################################################################
 ########удаление использованного из материала
         if(len(cur_obj.data.materials)>0):#если есть материал
