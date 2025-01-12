@@ -393,8 +393,8 @@ class RenderSettM(bpy.types.Operator):##Запекание цвета
                             connected_socket_metalic = None#ищем ее название
                             if base_color_input.is_linked:#если есть какоенибудь соединение
                                 link = base_color_input.links[0]  # Берём первое соединение
-                                mats_bc[(index+1)*2]=link.from_node
-                                mats_bc[(index+1)*2+1]=link.from_socket.name
+                                mats_bc[index*2]=link.from_node
+                                mats_bc[index*2+1]=link.from_socket.name
                             if metalic_input.is_linked:#если есть какоенибудь соединение
                                 link = metalic_input.links[0]  # Берём первое соединение
                                 connected_node_metalic = link.from_node  # Нода, откуда идёт связь
@@ -850,8 +850,8 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
                             connected_socket_metalic = None#ищем ее название
                             if base_color_input.is_linked:#если есть какоенибудь соединение
                                 link = base_color_input.links[0]  # Берём первое соединение
-                                mats_bc[(index+1)*2]=link.from_node
-                                mats_bc[(index+1)*2+1]=link.from_socket.name
+                                mats_bc[index*2]=link.from_node
+                                mats_bc[index*2+1]=link.from_socket.name
                             if metalic_input.is_linked:#если есть какоенибудь соединение
                                 link = metalic_input.links[0]  # Берём первое соединение
                                 connected_node_metalic = link.from_node  # Нода, откуда идёт связь
