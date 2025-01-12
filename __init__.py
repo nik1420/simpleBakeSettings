@@ -801,25 +801,29 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
                             node_tree.nodes.remove(found_node1)
 
 
-
-
-        bake_target_label_m = context.active_object.simple_bake_image_name + '_M'
-        bake_target_label_uv = bake_target_label_m + "_uv"
+        samples = int(context.active_object.samples)
+        bake_target_label_m = context.active_object.simple_bake_image_name
+        bake_target_label_uv =  bake_target_label_m + "_uv"
         cur_obj = context.active_object#находим выбранный объект
         #выставление настроек рендера
         cyc_sett = context.scene.cycles
         cyc_sett.device = "GPU"
         cyc_sett.use_adaptive_sampling = False
         cyc_sett.use_denoising = False
+        cyc_sett.samples = samples
         cyc_sett.bake_type = 'DIFFUSE'
         context.scene.render.engine = 'CYCLES'
+        context.scene.render.bake.use_pass_direct = False
+        context.scene.render.bake.use_pass_indirect = False
+        context.scene.render.bake.use_pass_color = True
         node_tree = None
         connected_node_basecolor = None
         connected_socket_basecolor = None
         principled_node = None
         bake_resolution = int(context.active_object.simple_bake_resolution)
         found_image = False
-        bake_img_m = None
+        mats_bc = [None] * 10
+        mats_bc_names = [None] * 10
         for image in bpy.data.images:
             if(image.name == bake_target_label_m):#если картинка уже существовала
                 img = bpy.data.images.get(bake_target_label_m)
@@ -827,7 +831,7 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
                 found_image = False
                 break
         if(found_image == False):
-            bake_img_m = bpy.ops.image.new(name = bake_target_label_m,width=bake_resolution,height=bake_resolution)#создаем картинку
+            bake_img = bpy.ops.image.new(name = bake_target_label_m,width=bake_resolution,height=bake_resolution)#создаем картинку
             bpy.data.images[bake_target_label_m].colorspace_settings.name = "Non-Color"#назначаем нужный цветовой профиль
         if(len(cur_obj.data.materials)>0):#если есть материал
             for index, material in enumerate(cur_obj.data.materials):
@@ -853,14 +857,21 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
                             base_color_input = principled_node.inputs.get("Base Color")#нашли вход Base color
                             connected_node_metalic= None#ищем подключенную ноду к металику
                             connected_socket_metalic = None#ищем ее название
+                            connected_node_basecolor = None#ищем подключенную ноду к цвету
+                            connected_socket_basecolor = None#ищем ее название
                             if base_color_input.is_linked:#если есть какоенибудь соединение
                                 link = base_color_input.links[0]  # Берём первое соединение
                                 connected_node_basecolor = link.from_node  # Нода, откуда идёт связь
                                 connected_socket_basecolor = link.from_socket.name  # имя, откуда идёт связь
+                                mats_bc[index]=connected_node_basecolor
+                                mats_bc_names[index] = connected_socket_basecolor
                             if metalic_input.is_linked:#если есть какоенибудь соединение
                                 link = metalic_input.links[0]  # Берём первое соединение
                                 connected_node_metalic = link.from_node  # Нода, откуда идёт связь
                                 connected_socket_metalic = link.from_socket.name  # имя, откуда идёт связь
+                            else:
+                                self.report({'ERROR'}, "Metallic input is not connected on material "+cur_obj.data.materials[index].name)#если не подключен металик
+                                return {'CANCELLED'}
                             if connected_node_metalic:#если существует подключенная нода
                                 node_tree.links.new(connected_node_metalic.outputs[connected_socket_metalic],principled_node.inputs[0])#соединяем с Base color
 
@@ -876,12 +887,19 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
         bpy.ops.object.bake(type="DIFFUSE",use_clear= True) 
         bpy.types.Scene.m_name = bake_target_label_m
         ############################################################################################Вертаем взад
-        for link in node_tree.links:
-            if link.from_socket.name ==connected_socket_metalic and link.to_socket.name == "Base Color":
-                node_tree.links.remove(link)
-                break
-        if connected_node_basecolor:#если существует подключенная нода
-            node_tree.links.new(connected_node_basecolor.outputs[connected_socket_basecolor],principled_node.inputs["Base Color"])#соединяем с Base color
+        if(len(cur_obj.data.materials)>0):#если есть материал
+            for index, material in enumerate(cur_obj.data.materials):
+                #настройка материала
+                node_tree = material.node_tree#лезем в ноды
+                nodes = node_tree.nodes#и в дерево
+                if node_tree:
+                    principled_node = node_tree.nodes.get("Principled BSDF")#нашли общую ноду
+                    base_color_input = principled_node.inputs.get("Base Color")#нашли вход Base color
+                    if base_color_input.is_linked:#если есть какоенибудь соединение
+                            link = base_color_input.links[0]  # Берём первое соединение
+                            node_tree.links.remove(link)
+                            if mats_bc[index]:#соединяем с тем BC что был до запекания
+                                node_tree.links.new(mats_bc[index].outputs[mats_bc_names[index]],principled_node.inputs[0])#соединяем с Base color
         ###########################################################################################
 ########удаление использованного из материала
         if(len(cur_obj.data.materials)>0):#если есть материал
