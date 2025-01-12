@@ -392,6 +392,8 @@ class RenderSettM(bpy.types.Operator):##Запекание цвета
                             base_color_input = principled_node.inputs.get("Base Color")#нашли вход Base color
                             connected_node_metalic= None#ищем подключенную ноду к металику
                             connected_socket_metalic = None#ищем ее название
+                            connected_node_basecolor = None#ищем подключенную ноду к цвету
+                            connected_socket_basecolor = None#ищем ее название
                             if base_color_input.is_linked:#если есть какоенибудь соединение
                                 link = base_color_input.links[0]  # Берём первое соединение
                                 connected_node_basecolor = link.from_node  # Нода, откуда идёт связь
@@ -404,7 +406,6 @@ class RenderSettM(bpy.types.Operator):##Запекание цвета
                                 node_tree.links.new(connected_node_metalic.outputs[connected_socket_metalic],principled_node.inputs[0])#соединяем с Base color
 
                             texture_image_my = nodes.new(type="ShaderNodeTexImage")#создаем  ноду картинки
-                            print('createimagenode')
                             texture_image_my.label = bake_target_label
                             uv_map_node  = nodes.new(type="ShaderNodeUVMap")#создаем ноду юв
                             uv_map_node.label = bake_target_label_uv
@@ -415,12 +416,24 @@ class RenderSettM(bpy.types.Operator):##Запекание цвета
                             break
         bpy.ops.object.bake(type="DIFFUSE",use_clear= True) 
         ############################################################################################Вертаем взад
-        for link in node_tree.links:
-            if link.from_socket.name ==connected_socket_metalic and link.to_socket.name == "Base Color":
-                node_tree.links.remove(link)
-                break
-        if connected_node_basecolor:#если существует подключенная нода
-            node_tree.links.new(connected_node_basecolor.outputs[connected_socket_basecolor],principled_node.inputs["Base Color"])#соединяем с Base color
+        if(len(cur_obj.data.materials)>0):#если есть материал
+            for index, material in enumerate(cur_obj.data.materials):
+                #настройка материала
+                node_tree = material.node_tree#лезем в ноды
+                nodes = node_tree.nodes#и в дерево
+                principled_node = node_tree.nodes.get("Principled BSDF")#нашли общую ноду
+                metalic_input = principled_node.inputs.get("Metallic")#нашли вход металик
+                base_color_input = principled_node.inputs.get("Base Color")#нашли вход Base color
+                connected_node_metalic= None#ищем подключенную ноду к металику
+                connected_socket_metalic = None#ищем ее название
+                connected_node_basecolor = None#ищем подключенную ноду к цвету
+                connected_socket_basecolor = None#ищем ее название
+                if base_color_input.is_linked:#если есть какоенибудь соединение
+                    link = base_color_input.links[0]  # Берём первое соединение
+                    connected_node_basecolor = link.from_node#нода откуда идет связь
+                    connected_socket_basecolor = link.from_socket.name  # имя, откуда идёт связь
+                    val = connected_node_basecolor.outputs.get(connected_socket_basecolor)#выход из которого идут соединения
+                    print(len(val.links))
         ###########################################################################################
 ########удаление использованного из материала
         if(len(cur_obj.data.materials)>0):#если есть материал
@@ -966,18 +979,13 @@ class CombineIMG(bpy.types.Operator):
     bl_label = "Combine RMA"
     def execute(self, context):
         print(bpy.context.scene.r_name)
-        image_paths = {
-    "R": "D:/baked_r.png",  # Красный канал
-    "G": "D:/baked_m.png",  # Зелёный канал
-    "B": "D:/baked_ao.png",  # Синий канал
-}
+
         image_paths_local = {
     "R":bpy.types.Scene.r_name,  # Красный канал
     "G":bpy.types.Scene.m_name,  # Зелёный канал
     "B":bpy.types.Scene.ao_name,  # Синий канал
 }
         combined_image = None
-        #images = {channel: bpy.data.images.load(path) for channel, path in image_paths.items()}
         images = {channel: bpy.data.images[name] for channel, name in image_paths_local.items()}
         width, height = images["R"].size
         channels = {}
@@ -1004,6 +1012,57 @@ class CombineIMG(bpy.types.Operator):
 
         return {'FINISHED'}
 
+class SeparateIMG(bpy.types.Operator):
+    bl_idname = "object.separator"
+    bl_label = "Separate RMA"
+    
+    def execute(self, context):
+        sep_img = bpy.context.active_object.image_to_separate
+        combined_image = bpy.data.images.get(sep_img)
+
+        width, height = combined_image.size
+        pixels = np.array(combined_image.pixels[:])
+        channels_R = np.zeros((width * height * 4,), dtype=np.float32)
+        # channels_R = {
+        #     "R": np.zeros((width * height * 4,), dtype=np.float32),
+        #     "G": np.zeros((width * height * 4,), dtype=np.float32),
+        #     "B": np.zeros((width * height * 4,), dtype=np.float32),
+        #     "A": np.ones((width * height * 4,), dtype=np.float32)
+        # }   
+        channels_G = {
+            "R": np.zeros((width * height * 4,), dtype=np.float32),
+            "G": np.zeros((width * height * 4,), dtype=np.float32),
+            "B": np.zeros((width * height * 4,), dtype=np.float32),
+            "A": np.ones((width * height * 4,), dtype=np.float32)
+        }  
+        channels_B = {
+            "R": np.zeros((width * height * 4,), dtype=np.float32),
+            "G": np.zeros((width * height * 4,), dtype=np.float32),
+            "B": np.zeros((width * height * 4,), dtype=np.float32),
+            "A": np.ones((width * height * 4,), dtype=np.float32)
+        }   
+        channels_A= {
+            "R": np.zeros((width * height * 4,), dtype=np.float32),
+            "G": np.zeros((width * height * 4,), dtype=np.float32),
+            "B": np.zeros((width * height * 4,), dtype=np.float32),
+            "A": np.ones((width * height * 4,), dtype=np.float32)
+        }
+        channels_zero = {
+            "R": np.zeros((width * height * 4,), dtype=np.float32),
+            "G": np.zeros((width * height * 4,), dtype=np.float32),
+            "B": np.zeros((width * height * 4,), dtype=np.float32),
+            "A": np.ones((width * height * 4,), dtype=np.float32)
+        }
+
+        channels_R["R"][0::4] = pixels[0::4]  # Красный канал
+        channels_R["G"][1::4] = pixels[0::4]  # Зелёный канал
+        channels_R["B"][2::4] = pixels[0::4]  # Синий канал
+        channels_R["A"][3::4] = pixels[0::4]  # Альфа канал
+
+        new_image = bpy.data.images.new('Separeted_R', width=width, height=height)
+        new_image.pixels = channels_R.tolist()
+
+        return {'FINISHED'}
 
 
 
@@ -1035,6 +1094,8 @@ class OBJECT_PT_CustomPanel(bpy.types.Panel):
                 layout.operator("object.rendersettao", icon='RESTRICT_RENDER_OFF')
                 layout.operator("object.rendersettrma", icon='RESTRICT_RENDER_OFF')
                 layout.operator("object.combinator", icon='RESTRICT_RENDER_OFF')
+                #layout.prop(context.active_object, 'image_to_separate', text="Img_Name")
+                #layout.operator("object.separator", icon='RESTRICT_RENDER_OFF')
                 layout.split(factor=0.1)
                 box = layout.box()
                 row = box.row()
@@ -1063,7 +1124,7 @@ def register():
     bpy.utils.register_class(RenderBC)
     bpy.utils.register_class(RenderEngineCycles)
     bpy.utils.register_class(RenderEngineEevee)
-    
+    #bpy.utils.register_class(SeparateIMG)
     register_properties()
     
     pass
@@ -1083,7 +1144,7 @@ def unregister():
     bpy.utils.unregister_class(RenderBC)
     bpy.utils.unregister_class(RenderEngineCycles)
     bpy.utils.unregister_class(RenderEngineEevee)
-    
+    #bpy.utils.unregister_class(SeparateIMG)
     unregister_properties()
     
 
@@ -1106,6 +1167,7 @@ def register_properties():
         name = "Bake Image Name",
         default="BakedImage"
     )
+
     bpy.types.Object.samples = StringProperty(
         name = "Samples",
         default="100"
@@ -1114,6 +1176,10 @@ def register_properties():
         name = "Render Resolution",
         default="1024"
     )
+    # bpy.types.Object.image_to_separate = StringProperty(
+    #     name = "RMA name to separate",
+    #     default="Image_Name"
+    # )
     pass
 
 
@@ -1122,6 +1188,7 @@ def unregister_properties():
     del bpy.types.Object.simple_bake_image_name
     del bpy.types.Object.simple_bake_image_res
     del bpy.types.Object.samples
+    #del bpy.types.Object.image_to_separate
     pass
 
 if __name__ == "__main__":
