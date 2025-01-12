@@ -359,6 +359,8 @@ class RenderSettM(bpy.types.Operator):##Запекание цвета
         principled_node = None
         bake_resolution = int(context.active_object.simple_bake_resolution)
         found_image = False
+        mats_bc = [None] * 10
+        mats_bc_names = [None] * 10
         for image in bpy.data.images:
             if(image.name == bake_target_label):#если картинка уже существовала
                 img = bpy.data.images.get(bake_target_label)
@@ -398,10 +400,15 @@ class RenderSettM(bpy.types.Operator):##Запекание цвета
                                 link = base_color_input.links[0]  # Берём первое соединение
                                 connected_node_basecolor = link.from_node  # Нода, откуда идёт связь
                                 connected_socket_basecolor = link.from_socket.name  # имя, откуда идёт связь
+                                mats_bc[index]=connected_node_basecolor
+                                mats_bc_names[index] = connected_socket_basecolor
                             if metalic_input.is_linked:#если есть какоенибудь соединение
                                 link = metalic_input.links[0]  # Берём первое соединение
                                 connected_node_metalic = link.from_node  # Нода, откуда идёт связь
                                 connected_socket_metalic = link.from_socket.name  # имя, откуда идёт связь
+                            else:
+                                self.report({'ERROR'}, "Metallic input is not connected on material "+cur_obj.data.materials[index].name)#если не подключен металик
+                                return {'CANCELLED'}
                             if connected_node_metalic:#если существует подключенная нода
                                 node_tree.links.new(connected_node_metalic.outputs[connected_socket_metalic],principled_node.inputs[0])#соединяем с Base color
 
@@ -421,19 +428,14 @@ class RenderSettM(bpy.types.Operator):##Запекание цвета
                 #настройка материала
                 node_tree = material.node_tree#лезем в ноды
                 nodes = node_tree.nodes#и в дерево
-                principled_node = node_tree.nodes.get("Principled BSDF")#нашли общую ноду
-                metalic_input = principled_node.inputs.get("Metallic")#нашли вход металик
-                base_color_input = principled_node.inputs.get("Base Color")#нашли вход Base color
-                connected_node_metalic= None#ищем подключенную ноду к металику
-                connected_socket_metalic = None#ищем ее название
-                connected_node_basecolor = None#ищем подключенную ноду к цвету
-                connected_socket_basecolor = None#ищем ее название
-                if base_color_input.is_linked:#если есть какоенибудь соединение
-                    link = base_color_input.links[0]  # Берём первое соединение
-                    connected_node_basecolor = link.from_node#нода откуда идет связь
-                    connected_socket_basecolor = link.from_socket.name  # имя, откуда идёт связь
-                    val = connected_node_basecolor.outputs.get(connected_socket_basecolor)#выход из которого идут соединения
-                    print(len(val.links))
+                if node_tree:
+                    principled_node = node_tree.nodes.get("Principled BSDF")#нашли общую ноду
+                    base_color_input = principled_node.inputs.get("Base Color")#нашли вход Base color
+                    if base_color_input.is_linked:#если есть какоенибудь соединение
+                            link = base_color_input.links[0]  # Берём первое соединение
+                            node_tree.links.remove(link)
+                            if mats_bc[index]:#соединяем с тем BC что был до запекания
+                                node_tree.links.new(mats_bc[index].outputs[mats_bc_names[index]],principled_node.inputs[0])#соединяем с Base color
         ###########################################################################################
 ########удаление использованного из материала
         if(len(cur_obj.data.materials)>0):#если есть материал
