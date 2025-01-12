@@ -802,8 +802,8 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
 
 
         samples = int(context.active_object.samples)
-        bake_target_label_m = context.active_object.simple_bake_image_name
-        bake_target_label_uv =  bake_target_label_m + "_uv"
+        bake_target_label_m = context.active_object.simple_bake_image_name + '_M'
+        bake_target_label_uv = bake_target_label_m + "_uv"
         cur_obj = context.active_object#находим выбранный объект
         #выставление настроек рендера
         cyc_sett = context.scene.cycles
@@ -822,6 +822,7 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
         principled_node = None
         bake_resolution = int(context.active_object.simple_bake_resolution)
         found_image = False
+        bake_img_m = None
         mats_bc = [None] * 10
         mats_bc_names = [None] * 10
         for image in bpy.data.images:
@@ -831,7 +832,7 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
                 found_image = False
                 break
         if(found_image == False):
-            bake_img = bpy.ops.image.new(name = bake_target_label_m,width=bake_resolution,height=bake_resolution)#создаем картинку
+            bake_img_m = bpy.ops.image.new(name = bake_target_label_m,width=bake_resolution,height=bake_resolution)#создаем картинку
             bpy.data.images[bake_target_label_m].colorspace_settings.name = "Non-Color"#назначаем нужный цветовой профиль
         if(len(cur_obj.data.materials)>0):#если есть материал
             for index, material in enumerate(cur_obj.data.materials):
