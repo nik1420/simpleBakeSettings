@@ -6,8 +6,6 @@ bl_info = {
 }
 ##еще много оптимизировать
 import bpy
-import mathutils
-import time
 from bpy.props import EnumProperty, StringProperty
 import numpy as np
 
