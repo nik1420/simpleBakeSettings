@@ -10,6 +10,7 @@ import mathutils
 import time
 from bpy.props import EnumProperty, StringProperty
 import numpy as np
+
 bpy.types.Scene.r_name = bpy.props.StringProperty(
     name="r_name",
     default=""
@@ -22,11 +23,20 @@ bpy.types.Scene.ao_name = bpy.props.StringProperty(
     name="ao_name",
     default=""
 )
+
+def SaveBeforeBake(self):#сохраняем файл перед бейком
+    if bpy.data.filepath:
+        bpy.ops.wm.save_mainfile(filepath=bpy.data.filepath)
+    else:
+        self.report({'ERROR'}, "Save the file first")
+        return {'CANCELLED'}
+
 class RenderBC(bpy.types.Operator):#Метод для РЕНДЕРА цвета на плоскости
     bl_idname = "object.renderbc"
     bl_label = "Simple RENDER BC/N"
 
     def execute(self, context):
+        SaveBeforeBake(self)#сохраняем файл перед бейком
         rend_res_val = context.active_object.simple_bake_image_res
         context.scene.render.resolution_y= int(rend_res_val)
         context.scene.render.resolution_x= int(rend_res_val)
@@ -96,6 +106,7 @@ class RenderSettSelfEmi(bpy.types.Operator):##Запекание цвета
     bl_label = "Simple Bake SELF EMISSION"
     
     def execute(self,context):
+        SaveBeforeBake(self)#сохраняем файл перед бейком
         samples = int(context.active_object.samples)
         bake_target_label = context.active_object.simple_bake_image_name
         bake_target_label_uv = bake_target_label + "_uv"
@@ -177,6 +188,7 @@ class RenderSettBC(bpy.types.Operator):##Запекание цвета
     bl_label = "Simple Bake BC"
     
     def execute(self,context):
+        SaveBeforeBake(self)#сохраняем файл перед бейком
         samples = int(context.active_object.samples)
         bake_target_label = context.active_object.simple_bake_image_name
         bake_target_label_uv = bake_target_label + "_uv"
@@ -259,6 +271,7 @@ class RenderSettAO(bpy.types.Operator):##Запекание цвета
     bl_label = "Simple Bake AO"
     
     def execute(self,context):
+        SaveBeforeBake(self)#сохраняем файл перед бейком
         samples = int(context.active_object.samples)
         bake_target_label = context.active_object.simple_bake_image_name
         bake_target_label_uv = bake_target_label + "_uv"
@@ -338,6 +351,7 @@ class RenderSettM(bpy.types.Operator):##Запекание цвета
     bl_label = "Simple Bake M"
     
     def execute(self,context):
+        SaveBeforeBake(self)#сохраняем файл перед бейком
         samples = int(context.active_object.samples)
         bake_target_label = context.active_object.simple_bake_image_name
         bake_target_label_uv = bake_target_label + "_uv"
@@ -456,6 +470,7 @@ class RenderSettEmi(bpy.types.Operator):##Запекание емисии
     bl_label = "Simple Bake Emi"
     
     def execute(self,context):
+        SaveBeforeBake(self)#сохраняем файл перед бейком
         samples = int(context.active_object.samples)
         bake_target_label = context.active_object.simple_bake_image_name
         bake_target_label_uv = bake_target_label + "_uv"
@@ -535,6 +550,7 @@ class RenderSettRough(bpy.types.Operator):##Запекание емисии
     bl_label = "Simple Bake R"
     
     def execute(self,context):
+        SaveBeforeBake(self)#сохраняем файл перед бейком
         samples = int(context.active_object.samples)
         bake_target_label = context.active_object.simple_bake_image_name
         bake_target_label_uv = bake_target_label + "_uv"
@@ -614,6 +630,7 @@ class RenderSettNorm(bpy.types.Operator):##Запекание нормала
     bl_label = "Simple Bake Normal"
     
     def execute(self,context):
+        SaveBeforeBake(self)#сохраняем файл перед бейком
         samples = int(context.active_object.samples)
         bake_target_label = context.active_object.simple_bake_image_name
         bake_target_label_uv = bake_target_label + "_uv"
@@ -716,6 +733,7 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
     bl_label = "Simple Bake RMA"
     
     def execute(self,context):
+        SaveBeforeBake(self)#сохраняем файл перед бейком
         samples = int(context.active_object.samples)
         bake_target_label_R = context.active_object.simple_bake_image_name + '_R'
         bake_target_label_uv = bake_target_label_R + "_uv"
@@ -983,6 +1001,7 @@ class CombineIMG(bpy.types.Operator):
     bl_idname = "object.combinator"
     bl_label = "Combine RMA"
     def execute(self, context):
+        SaveBeforeBake(self)#сохраняем файл перед бейком
         print(bpy.context.scene.r_name)
 
         image_paths_local = {
@@ -1022,6 +1041,7 @@ class SeparateIMG(bpy.types.Operator):
     bl_label = "Separate RMA"
     
     def execute(self, context):
+        SaveBeforeBake(self)#сохраняем файл перед бейком
         sep_img = bpy.context.active_object.image_to_separate
         combined_image = bpy.data.images.get(sep_img)
 
@@ -1115,7 +1135,6 @@ class OBJECT_PT_CustomPanel(bpy.types.Panel):
 # Регистрация классов
 def register():
     ## Classes
-    
     bpy.utils.register_class(RenderSettEmi)
     bpy.utils.register_class(RenderSettSelfEmi)
     bpy.utils.register_class(RenderSettBC)
