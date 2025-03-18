@@ -1137,7 +1137,7 @@ class OBJECT_PT_CustomPanel(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         if bpy.context.active_object in bpy.context.selected_objects:
-            if(bpy.context.active_object.type != "CAMERA" and bpy.context.active_object.type != "LIGHT"):
+            if(bpy.context.active_object.type != "CAMERA" and bpy.context.active_object.type != "LIGHT" and bpy.context.active_object.type != "ARMATURE"):
                 #layout.prop(bpy.data.scenes["Scene"], 'name', text='Разрешение')
                 row = layout.row()
                 row.prop(context.active_object, 'simple_bake_resolution', text='Resolution', icon='OBJECT_HIDDEN')
