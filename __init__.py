@@ -791,7 +791,7 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
                     break
         if(found_image == False):
             bake_img_r = bpy.ops.image.new(name = bake_target_label_R,width=bake_resolution,height=bake_resolution,float = True)#создаем картинку
-            bpy.data.images[bake_target_label_R].colorspace_settings.name = "sRGB"#назначаем нужный цветовой профиль
+            bpy.data.images[bake_target_label_R].colorspace_settings.name = "Non-Color"#назначаем нужный цветовой профиль
         if(len(cur_obj.data.materials)>0):#если есть материал
             for index, material in enumerate(cur_obj.data.materials):
                 node_tree = material.node_tree#лезем в ноды
