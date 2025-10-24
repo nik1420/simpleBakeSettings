@@ -374,7 +374,7 @@ class RenderSettM(bpy.types.Operator):##Запекание цвета
         cyc_sett.use_adaptive_sampling = False
         cyc_sett.use_denoising = False
         cyc_sett.samples = samples
-        cyc_sett.bake_type = 'DIFFUSE'
+        cyc_sett.bake_type = 'EMIT'
         context.scene.render.engine = 'CYCLES'
         context.scene.render.bake.use_pass_direct = False
         context.scene.render.bake.use_pass_indirect = False
@@ -392,8 +392,7 @@ class RenderSettM(bpy.types.Operator):##Запекание цвета
                 break
         if(found_image == False):
             bake_img = bpy.ops.image.new(name = bake_target_label,width=bake_resolution,height=bake_resolution)#создаем картинку
-            bpy.data.images[bake_target_label].colorspace_settings.name = "sRGB"#назначаем нужный цветовой профиль
-            #bpy.data.images[bake_target_label].colorspace_settings.name = "Non-Color"#назначаем нужный цветовой профиль
+            bpy.data.images[bake_target_label].colorspace_settings.name = "Non-Color"#назначаем нужный цветовой профиль
         if(len(cur_obj.data.materials)>0):#если есть материал
             for index, material in enumerate(cur_obj.data.materials):
                 #настройка материала
@@ -415,11 +414,12 @@ class RenderSettM(bpy.types.Operator):##Запекание цвета
                             ########################################################################################### Поиск и пересоединение Металика
                             principled_node = node_tree.nodes.get("Principled BSDF")#нашли общую ноду
                             metalic_input = principled_node.inputs.get("Metallic")#нашли вход металик
-                            base_color_input = principled_node.inputs.get("Base Color")#нашли вход Base color
+                            emission_input = principled_node.inputs[19]#нашли вход Emission
                             connected_node_metalic= None#ищем подключенную ноду к металику
                             connected_socket_metalic = None#ищем ее название
-                            if base_color_input.is_linked:#если есть какоенибудь соединение
-                                link = base_color_input.links[0]  # Берём первое соединение
+                            principled_node.inputs[20] = 1.0
+                            if emission_input.is_linked:#если есть какоенибудь соединение
+                                link = emission_input.links[0]  # Берём первое соединение
                                 mats_bc[index] = ( link.from_node, link.from_socket.name )
                             if metalic_input.is_linked:#если есть какоенибудь соединение
                                 link = metalic_input.links[0]  # Берём первое соединение
@@ -429,7 +429,7 @@ class RenderSettM(bpy.types.Operator):##Запекание цвета
                                 self.report({'ERROR'}, "Metallic input is not connected on material "+cur_obj.data.materials[index].name)#если не подключен металик
                                 return {'CANCELLED'}
                             if connected_node_metalic:#если существует подключенная нода
-                                node_tree.links.new(connected_node_metalic.outputs[connected_socket_metalic],principled_node.inputs[0])#соединяем с Base color
+                                node_tree.links.new(connected_node_metalic.outputs[connected_socket_metalic],principled_node.inputs[19])#соединяем с emission color
 
                             texture_image_my = nodes.new(type="ShaderNodeTexImage")#создаем  ноду картинки
                             texture_image_my.label = bake_target_label
@@ -440,7 +440,7 @@ class RenderSettM(bpy.types.Operator):##Запекание цвета
                             node_tree.nodes.active = texture_image_my#делаем активной
                             node_tree.nodes.active.image = bpy.data.images[bake_target_label]#ставим в выбранную картинку
                             break
-        bpy.ops.object.bake(type="DIFFUSE",use_clear= True) 
+        bpy.ops.object.bake(type="EMIT",use_clear= True) 
         ############################################################################################Вертаем взад
         if(len(cur_obj.data.materials)>0):#если есть материал
             for index, material in enumerate(cur_obj.data.materials):
@@ -449,12 +449,12 @@ class RenderSettM(bpy.types.Operator):##Запекание цвета
                 nodes = node_tree.nodes#и в дерево
                 if node_tree:
                     principled_node = node_tree.nodes.get("Principled BSDF")#нашли общую ноду
-                    base_color_input = principled_node.inputs.get("Base Color")#нашли вход Base color
-                    if base_color_input.is_linked:#если есть какоенибудь соединение
-                            link = base_color_input.links[0]  # Берём первое соединение
+                    emission_input_input = principled_node.inputs[19]#нашли вход Base color
+                    if emission_input_input.is_linked:#если есть какоенибудь соединение
+                            link = emission_input_input.links[0]  # Берём первое соединение
                             node_tree.links.remove(link)
-                            if mats_bc[index]:#соединяем с тем BC что был до запекания
-                                node_tree.links.new(mats_bc[index][0].outputs[mats_bc[index][1]],principled_node.inputs[0])#соединяем с Base color
+                            if mats_bc[index]:#соединяем с тем emi что был до запекания
+                                node_tree.links.new(mats_bc[index][0].outputs[mats_bc[index][1]],principled_node.inputs[19])#соединяем с Base color
         ###########################################################################################
 ########удаление использованного из материала
         if(len(cur_obj.data.materials)>0):#если есть материал
