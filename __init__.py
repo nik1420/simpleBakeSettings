@@ -419,7 +419,7 @@ class RenderSettM(bpy.types.Operator):##Запекание цвета
                             emission_str_val = 1.0
                             connected_node_metalic= None#ищем подключенную ноду к металику
                             connected_socket_metalic = None#ищем ее название
-                            emission_str = emission_str_val
+                            emission_str.default_value = emission_str_val
                             if emission_input.is_linked:#если есть какоенибудь соединение
                                 link = emission_input.links[0]  # Берём первое соединение
                                 mats_bc[index] = ( link.from_node, link.from_socket.name )
