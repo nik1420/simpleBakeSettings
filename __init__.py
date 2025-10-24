@@ -391,7 +391,7 @@ class RenderSettM(bpy.types.Operator):##Запекание цвета
                 found_image = False
                 break
         if(found_image == False):
-            bake_img = bpy.ops.image.new(name = bake_target_label,width=bake_resolution,height=bake_resolution)#создаем картинку
+            bake_img = bpy.ops.image.new(name = bake_target_label,width=bake_resolution,height=bake_resolution,float = True)#создаем картинку
             bpy.data.images[bake_target_label].colorspace_settings.name = "Non-Color"#назначаем нужный цветовой профиль
         if(len(cur_obj.data.materials)>0):#если есть материал
             for index, material in enumerate(cur_obj.data.materials):
@@ -415,7 +415,8 @@ class RenderSettM(bpy.types.Operator):##Запекание цвета
                             principled_node = node_tree.nodes.get("Principled BSDF")#нашли общую ноду
                             metalic_input = principled_node.inputs.get("Metallic")#нашли вход металик
                             emission_input = principled_node.inputs[27]#нашли вход Emission
-                            emission_str = principled_node.inputs[28]
+                            emission_str = principled_node.inputs[28]#нашли вход Emission strength
+                            def_emi_str = emission_str.default_value#сохранили стандартную эмиссию
                             emission_str_val = 1.0
                             connected_node_metalic= None#ищем подключенную ноду к металику
                             connected_socket_metalic = None#ищем ее название
@@ -453,8 +454,7 @@ class RenderSettM(bpy.types.Operator):##Запекание цвета
                     principled_node = node_tree.nodes.get("Principled BSDF")#нашли общую ноду
                     emission_input_input = principled_node.inputs[27]#нашли вход emission
                     emission_str = principled_node.inputs[28]
-                    emission_str_val_new = 0.0
-                    emission_str.default_value = emission_str_val_new
+                    emission_str.default_value = def_emi_str#возвращаем силу емиссии
                     if emission_input_input.is_linked:#если есть какоенибудь соединение
                             link = emission_input_input.links[0]  # Берём первое соединение
                             node_tree.links.remove(link)
@@ -514,7 +514,7 @@ class RenderSettEmi(bpy.types.Operator):##Запекание емисии
                     found_image = False
                     break
         if(found_image == False):
-            bake_img = bpy.ops.image.new(name = bake_target_label,width=bake_resolution,height=bake_resolution)#создаем картинку
+            bake_img = bpy.ops.image.new(name = bake_target_label,width=bake_resolution,height=bake_resolution,float = True)#создаем картинку
             bpy.data.images[bake_target_label].colorspace_settings.name = "sRGB"#назначаем нужный цветовой профиль
         if(len(cur_obj.data.materials)>0):#если есть материал
             for index, material in enumerate(cur_obj.data.materials):
@@ -624,11 +624,12 @@ class RenderSettRough(bpy.types.Operator):##Запекание емисии
                             principled_node = node_tree.nodes.get("Principled BSDF")#нашли общую ноду
                             roughness_input = principled_node.inputs[2]#нашли вход roughness
                             emission_input = principled_node.inputs[27]#нашли вход Emission
-                            emission_str = principled_node.inputs[28]
-                            emission_str_val = 1.0
+                            emission_str = principled_node.inputs[28]#нашли вход Emission strength
+                            def_emi_str = emission_str.default_value#сохранили стандартную эмиссию
+                            emission_str_val = 1.0#значение силы емиссии
                             connected_node_roughness= None#ищем подключенную ноду к металику
                             connected_socket_roughness = None#ищем ее название
-                            emission_str.default_value = emission_str_val
+                            emission_str.default_value = emission_str_val#назначение силы эмиссии
                             if emission_input.is_linked:#если есть какоенибудь соединение
                                 link = emission_input.links[0]  # Берём первое соединение
                                 mats_bc[index] = ( link.from_node, link.from_socket.name )
@@ -663,8 +664,7 @@ class RenderSettRough(bpy.types.Operator):##Запекание емисии
                     principled_node = node_tree.nodes.get("Principled BSDF")#нашли общую ноду
                     emission_input_input = principled_node.inputs[27]#нашли вход emission
                     emission_str = principled_node.inputs[28]
-                    emission_str_val_new = 0.0
-                    emission_str.default_value = emission_str_val_new
+                    emission_str.default_value = def_emi_str
                     if emission_input_input.is_linked:#если есть какоенибудь соединение
                             link = emission_input_input.links[0]  # Берём первое соединение
                             node_tree.links.remove(link)
@@ -723,7 +723,7 @@ class RenderSettNorm(bpy.types.Operator):##Запекание нормала
                     found_image = False
                     break
         if(found_image == False):
-            bake_img = bpy.ops.image.new(name = bake_target_label,width=bake_resolution,height=bake_resolution)#создаем картинку
+            bake_img = bpy.ops.image.new(name = bake_target_label,width=bake_resolution,height=bake_resolution,float = True)#создаем картинку
         if(len(cur_obj.data.materials)>0):#если есть материал
             for index, material in enumerate(cur_obj.data.materials):
                 node_tree = material.node_tree#лезем в ноды
@@ -857,6 +857,7 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
                             roughness_input = principled_node.inputs[2]#нашли вход roughness
                             emission_input = principled_node.inputs[27]#нашли вход Emission
                             emission_str = principled_node.inputs[28]
+                            def_emi_str = emission_str.default_value#сохранили стандартную эмиссию
                             emission_str_val = 1.0
                             connected_node_roughness= None#ищем подключенную ноду к металику
                             connected_socket_roughness = None#ищем ее название
@@ -895,8 +896,7 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
                     principled_node = node_tree.nodes.get("Principled BSDF")#нашли общую ноду
                     emission_input_input = principled_node.inputs[27]#нашли вход emission
                     emission_str = principled_node.inputs[28]
-                    emission_str_val_new = 0.0
-                    emission_str.default_value = emission_str_val_new
+                    emission_str.default_value = def_emi_str#возвращаем стандартную эмиссию
                     if emission_input_input.is_linked:#если есть какоенибудь соединение
                             link = emission_input_input.links[0]  # Берём первое соединение
                             node_tree.links.remove(link)
@@ -950,7 +950,7 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
                 found_image = False
                 break
         if(found_image == False):
-            bake_img = bpy.ops.image.new(name = bake_target_label_m,width=bake_resolution,height=bake_resolution)#создаем картинку
+            bake_img = bpy.ops.image.new(name = bake_target_label_m,width=bake_resolution,height=bake_resolution,float = True)#создаем картинку
             bpy.data.images[bake_target_label_m].colorspace_settings.name = "Non-Color"#назначаем нужный цветовой профиль
         if(len(cur_obj.data.materials)>0):#если есть материал
             for index, material in enumerate(cur_obj.data.materials):
@@ -975,6 +975,7 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
                             metalic_input = principled_node.inputs.get("Metallic")#нашли вход металик
                             emission_input = principled_node.inputs[27]#нашли вход Emission
                             emission_str = principled_node.inputs[28]
+                            def_emi_str = emission_str.default_value#сохранили стандартную эмиссию
                             emission_str_val = 1.0
                             connected_node_metalic= None#ищем подключенную ноду к металику
                             connected_socket_metalic = None#ищем ее название
@@ -1013,8 +1014,7 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
                     principled_node = node_tree.nodes.get("Principled BSDF")#нашли общую ноду
                     emission_input_input = principled_node.inputs[27]#нашли вход emission
                     emission_str = principled_node.inputs[28]
-                    emission_str_val_new = 0.0
-                    emission_str.default_value = emission_str_val_new
+                    emission_str.default_value = def_emi_str#возвращаем стандартную эмиссию
                     if emission_input_input.is_linked:#если есть какоенибудь соединение
                             link = emission_input_input.links[0]  # Берём первое соединение
                             node_tree.links.remove(link)
@@ -1061,7 +1061,7 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
                     found_image = False
                     break
         if(found_image == False):
-            bake_img_ao = bpy.ops.image.new(name = bake_target_label_ao,width=bake_resolution,height=bake_resolution)#создаем картинку
+            bake_img_ao = bpy.ops.image.new(name = bake_target_label_ao,width=bake_resolution,height=bake_resolution,float = True)#создаем картинку
             bpy.data.images[bake_target_label_ao].colorspace_settings.name = "Non-Color"#назначаем нужный цветовой профиль
         if(len(cur_obj.data.materials)>0):#если есть материал
             for index, material in enumerate(cur_obj.data.materials):
