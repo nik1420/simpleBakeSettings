@@ -782,6 +782,7 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
         context.scene.render.engine = 'CYCLES'
         bake_resolution = int(context.active_object.simple_bake_resolution)
         found_image = False
+        mats_bc = [None] * len(cur_obj.data.materials)
         bake_img_r = None
         for image in bpy.data.images:
             if(image.name == bake_target_label_R):#если картинка уже существовала
