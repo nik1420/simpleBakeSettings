@@ -452,8 +452,8 @@ class RenderSettM(bpy.types.Operator):##Запекание цвета
                 if node_tree:
                     principled_node = node_tree.nodes.get("Principled BSDF")#нашли общую ноду
                     emission_input_input = principled_node.inputs[27]#нашли вход emission
-                    emission_str_val = 0.0
-                    emission_str.default_value = emission_str_val
+                    emission_str_val_new = 0.0
+                    emission_str.default_value = emission_str_val_new
                     if emission_input_input.is_linked:#если есть какоенибудь соединение
                             link = emission_input_input.links[0]  # Берём первое соединение
                             node_tree.links.remove(link)
