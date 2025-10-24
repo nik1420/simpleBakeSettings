@@ -872,7 +872,7 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
                     found_node = None
                     found_node1 = None
                     for node in node_tree.nodes:
-                        if node.label == bake_target_label_m:
+                        if node.label == bake_target_label_R:
                             found_node = node
                             node_tree.nodes.remove(found_node)
                         
