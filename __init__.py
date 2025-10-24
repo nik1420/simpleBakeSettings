@@ -439,7 +439,7 @@ class RenderSettM(bpy.types.Operator):##Запекание цвета
                             node_tree.nodes.active = texture_image_my#делаем активной
                             node_tree.nodes.active.image = bpy.data.images[bake_target_label]#ставим в выбранную картинку
                             break
-        bpy.ops.object.bake('INVOKE_DEFAULT',type="DIFFUSE",use_clear= True) 
+        bpy.ops.object.bake(type="DIFFUSE",use_clear= True) 
         ############################################################################################Вертаем взад
         if(len(cur_obj.data.materials)>0):#если есть материал
             for index, material in enumerate(cur_obj.data.materials):
