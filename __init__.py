@@ -846,8 +846,8 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
 
 
         samples = int(context.active_object.samples)
-        bake_target_label_m = context.active_object.simple_bake_image_name + '_M'
-        bake_target_label_uv = bake_target_label_m + "_uv"
+        bake_target_label = context.active_object.simple_bake_image_name
+        bake_target_label_uv = bake_target_label + "_uv"
         cur_obj = context.active_object#находим выбранный объект
         #выставление настроек рендера
         cyc_sett = context.scene.cycles
@@ -855,7 +855,7 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
         cyc_sett.use_adaptive_sampling = False
         cyc_sett.use_denoising = False
         cyc_sett.samples = samples
-        cyc_sett.bake_type = 'DIFFUSE'
+        cyc_sett.bake_type = 'EMIT'
         context.scene.render.engine = 'CYCLES'
         context.scene.render.bake.use_pass_direct = False
         context.scene.render.bake.use_pass_indirect = False
@@ -864,17 +864,16 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
         principled_node = None
         bake_resolution = int(context.active_object.simple_bake_resolution)
         found_image = False
-        bake_img_m = None
         mats_bc = [None] * len(cur_obj.data.materials)
         for image in bpy.data.images:
-            if(image.name == bake_target_label_m):#если картинка уже существовала
-                img = bpy.data.images.get(bake_target_label_m)
+            if(image.name == bake_target_label):#если картинка уже существовала
+                img = bpy.data.images.get(bake_target_label)
                 bpy.data.images.remove(img)#удаляем ее
                 found_image = False
                 break
         if(found_image == False):
-            bake_img_m = bpy.ops.image.new(name = bake_target_label_m,width=bake_resolution,height=bake_resolution)#создаем картинку
-            bpy.data.images[bake_target_label_m].colorspace_settings.name = "Non-Color"#назначаем нужный цветовой профиль
+            bake_img = bpy.ops.image.new(name = bake_target_label,width=bake_resolution,height=bake_resolution)#создаем картинку
+            bpy.data.images[bake_target_label].colorspace_settings.name = "Non-Color"#назначаем нужный цветовой профиль
         if(len(cur_obj.data.materials)>0):#если есть материал
             for index, material in enumerate(cur_obj.data.materials):
                 #настройка материала
@@ -885,7 +884,7 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
                     found_node = None
                     found_node1 = None
                     for node in node_tree.nodes:
-                        if node.label == bake_target_label_m:
+                        if node.label == bake_target_label:
                             found_node = node
                             node_tree.nodes.active = found_node
                         if node.label == bake_target_label_uv:
@@ -896,11 +895,14 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
                             ########################################################################################### Поиск и пересоединение Металика
                             principled_node = node_tree.nodes.get("Principled BSDF")#нашли общую ноду
                             metalic_input = principled_node.inputs.get("Metallic")#нашли вход металик
-                            base_color_input = principled_node.inputs.get("Base Color")#нашли вход Base color
+                            emission_input = principled_node.inputs[27]#нашли вход Emission
+                            emission_str = principled_node.inputs[28]
+                            emission_str_val = 1.0
                             connected_node_metalic= None#ищем подключенную ноду к металику
                             connected_socket_metalic = None#ищем ее название
-                            if base_color_input.is_linked:#если есть какоенибудь соединение
-                                link = base_color_input.links[0]  # Берём первое соединение
+                            emission_str.default_value = emission_str_val
+                            if emission_input.is_linked:#если есть какоенибудь соединение
+                                link = emission_input.links[0]  # Берём первое соединение
                                 mats_bc[index] = ( link.from_node, link.from_socket.name )
                             if metalic_input.is_linked:#если есть какоенибудь соединение
                                 link = metalic_input.links[0]  # Берём первое соединение
@@ -910,19 +912,18 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
                                 self.report({'ERROR'}, "Metallic input is not connected on material "+cur_obj.data.materials[index].name)#если не подключен металик
                                 return {'CANCELLED'}
                             if connected_node_metalic:#если существует подключенная нода
-                                node_tree.links.new(connected_node_metalic.outputs[connected_socket_metalic],principled_node.inputs[0])#соединяем с Base color
+                                node_tree.links.new(connected_node_metalic.outputs[connected_socket_metalic],principled_node.inputs[27])#соединяем с emission color
 
                             texture_image_my = nodes.new(type="ShaderNodeTexImage")#создаем  ноду картинки
-                            texture_image_my.label = bake_target_label_m
+                            texture_image_my.label = bake_target_label
                             uv_map_node  = nodes.new(type="ShaderNodeUVMap")#создаем ноду юв
                             uv_map_node.label = bake_target_label_uv
                             uv_map_node.uv_map = cur_obj.data.uv_layers.active.name#выбираем юв
                             node_tree.links.new(uv_map_node.outputs['UV'],texture_image_my.inputs['Vector'])#соединяем юв и картинку
                             node_tree.nodes.active = texture_image_my#делаем активной
-                            node_tree.nodes.active.image = bpy.data.images[bake_target_label_m]#ставим в выбранную картинку
+                            node_tree.nodes.active.image = bpy.data.images[bake_target_label]#ставим в выбранную картинку
                             break
-        bpy.ops.object.bake(type="DIFFUSE",use_clear= True) 
-        bpy.types.Scene.m_name = bake_target_label_m
+        bpy.ops.object.bake(type="EMIT",use_clear= True) 
         ############################################################################################Вертаем взад
         if(len(cur_obj.data.materials)>0):#если есть материал
             for index, material in enumerate(cur_obj.data.materials):
@@ -931,12 +932,15 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
                 nodes = node_tree.nodes#и в дерево
                 if node_tree:
                     principled_node = node_tree.nodes.get("Principled BSDF")#нашли общую ноду
-                    base_color_input = principled_node.inputs.get("Base Color")#нашли вход Base color
-                    if base_color_input.is_linked:#если есть какоенибудь соединение
-                            link = base_color_input.links[0]  # Берём первое соединение
+                    emission_input_input = principled_node.inputs[27]#нашли вход emission
+                    emission_str = principled_node.inputs[28]
+                    emission_str_val_new = 0.0
+                    emission_str.default_value = emission_str_val_new
+                    if emission_input_input.is_linked:#если есть какоенибудь соединение
+                            link = emission_input_input.links[0]  # Берём первое соединение
                             node_tree.links.remove(link)
-                            if mats_bc[index]:#соединяем с тем BC что был до запекания
-                                node_tree.links.new(mats_bc[index][0].outputs[mats_bc[index][1]],principled_node.inputs[0])#соединяем с Base color
+                            if mats_bc[index]:#соединяем с тем emi что был до запекания
+                                node_tree.links.new(mats_bc[index][0].outputs[mats_bc[index][1]],principled_node.inputs[27])#соединяем с emission
         ###########################################################################################
 ########удаление использованного из материала
         if(len(cur_obj.data.materials)>0):#если есть материал
@@ -949,7 +953,7 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
                     found_node = None
                     found_node1 = None
                     for node in node_tree.nodes:
-                        if node.label == bake_target_label_m:
+                        if node.label == bake_target_label:
                             found_node = node
                             node_tree.nodes.remove(found_node)
                         
