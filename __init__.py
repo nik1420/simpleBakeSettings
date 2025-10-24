@@ -794,39 +794,6 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
             bpy.data.images[bake_target_label_R].colorspace_settings.name = "Non-Color"#назначаем нужный цветовой профиль
         if(len(cur_obj.data.materials)>0):#если есть материал
             for index, material in enumerate(cur_obj.data.materials):
-                node_tree = material.node_tree#лезем в ноды
-                nodes = node_tree.nodes#и в дерево
-                if node_tree:
-                    # Ищем узел с указанным лейблом чтоб не создовать несколько
-                    found_node = None
-                    for node in node_tree.nodes:
-                        if node.label == bake_target_label_R:
-                            found_node = node
-                            node_tree.nodes.active = found_node
-                        if node.label == bake_target_label_uv:
-                            found_node1 = node
-                            found_node1.uv_map = cur_obj.data.uv_layers.active.name
-                            break
-                        else:
-                            texture_image_my = nodes.new(type="ShaderNodeTexImage")#создаем  ноду картинки
-                            texture_image_my.label = bake_target_label_R
-
-                            uv_map_node  = nodes.new(type="ShaderNodeUVMap")#создаем ноду юв
-                            uv_map_node.label = bake_target_label_uv
-                            uv_map_node.uv_map = cur_obj.data.uv_layers.active.name#выбираем юв
-
-                            node_tree.links.new(uv_map_node.outputs['UV'],texture_image_my.inputs['Vector'])#соединяем юв и картинку
-                            bake_resolution = int(context.active_object.simple_bake_resolution)
-                            
-                            node_tree.nodes.active = texture_image_my#делаем активной
-                            node_tree.nodes.active.image = bpy.data.images[bake_target_label_R]#ставим в выбранную картинку    
-                            break
-        bpy.ops.object.bake(type="ROUGHNESS",use_clear= True)
-        bpy.types.Scene.r_name = bake_target_label_R
-        print(bpy.context.scene.r_name)
-        ########удаление использованного из материала
-        if(len(cur_obj.data.materials)>0):#если есть материал
-            for index, material in enumerate(cur_obj.data.materials):
                 #настройка материала
                 node_tree = material.node_tree#лезем в ноды
                 nodes = node_tree.nodes#и в дерево
@@ -837,12 +804,82 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
                     for node in node_tree.nodes:
                         if node.label == bake_target_label_R:
                             found_node = node
+                            node_tree.nodes.active = found_node
+                        if node.label == bake_target_label_uv:
+                            found_node1 = node
+                            found_node1.uv_map = cur_obj.data.uv_layers.active.name
+                            break
+                        else:
+                            ########################################################################################### Поиск и пересоединение Металика
+                            principled_node = node_tree.nodes.get("Principled BSDF")#нашли общую ноду
+                            roughness_input = principled_node.inputs.get("Roughness")#нашли вход металик
+                            emission_input = principled_node.inputs[27]#нашли вход Emission
+                            emission_str = principled_node.inputs[28]
+                            emission_str_val = 1.0
+                            connected_node_metalic= None#ищем подключенную ноду к металику
+                            connected_socket_metalic = None#ищем ее название
+                            emission_str.default_value = emission_str_val
+                            if emission_input.is_linked:#если есть какоенибудь соединение
+                                link = emission_input.links[0]  # Берём первое соединение
+                                mats_bc[index] = ( link.from_node, link.from_socket.name )
+                            if roughness_input.is_linked:#если есть какоенибудь соединение
+                                link = roughness_input.links[0]  # Берём первое соединение
+                                connected_node_roughness = link.from_node  # Нода, откуда идёт связь
+                                connected_node_roughness = link.from_socket.name  # имя, откуда идёт связь
+                            else:
+                                self.report({'ERROR'}, "Roughness input is not connected on material "+cur_obj.data.materials[index].name)#если не подключен roughness
+                                return {'CANCELLED'}
+                            if connected_node_metalic:#если существует подключенная нода
+                                node_tree.links.new(connected_node_metalic.outputs[connected_node_roughness],principled_node.inputs[27])#соединяем с emission color
+
+                            texture_image_my = nodes.new(type="ShaderNodeTexImage")#создаем  ноду картинки
+                            texture_image_my.label = bake_target_label_R
+                            uv_map_node  = nodes.new(type="ShaderNodeUVMap")#создаем ноду юв
+                            uv_map_node.label = bake_target_label_uv
+                            uv_map_node.uv_map = cur_obj.data.uv_layers.active.name#выбираем юв
+                            node_tree.links.new(uv_map_node.outputs['UV'],texture_image_my.inputs['Vector'])#соединяем юв и картинку
+                            node_tree.nodes.active = texture_image_my#делаем активной
+                            node_tree.nodes.active.image = bpy.data.images[bake_target_label_R]#ставим в выбранную картинку
+                            break
+        bpy.ops.object.bake(type="EMIT",use_clear= True) 
+        bpy.types.Scene.r_name = bake_target_label_R
+        ############################################################################################Вертаем взад
+        if(len(cur_obj.data.materials)>0):#если есть материал
+            for index, material in enumerate(cur_obj.data.materials):
+                #настройка материала
+                node_tree = material.node_tree#лезем в ноды
+                nodes = node_tree.nodes#и в дерево
+                if node_tree:
+                    principled_node = node_tree.nodes.get("Principled BSDF")#нашли общую ноду
+                    emission_input_input = principled_node.inputs[27]#нашли вход emission
+                    emission_str = principled_node.inputs[28]
+                    emission_str_val_new = 0.0
+                    emission_str.default_value = emission_str_val_new
+                    if emission_input_input.is_linked:#если есть какоенибудь соединение
+                            link = emission_input_input.links[0]  # Берём первое соединение
+                            node_tree.links.remove(link)
+                            if mats_bc[index]:#соединяем с тем emi что был до запекания
+                                node_tree.links.new(mats_bc[index][0].outputs[mats_bc[index][1]],principled_node.inputs[27])#соединяем с emission
+        ###########################################################################################
+########удаление использованного из материала
+        if(len(cur_obj.data.materials)>0):#если есть материал
+            for index, material in enumerate(cur_obj.data.materials):
+                #настройка материала
+                node_tree = material.node_tree#лезем в ноды
+                nodes = node_tree.nodes#и в дерево
+                if node_tree:
+                    # Ищем узел с указанным лейблом чтоб не создовать несколько
+                    found_node = None
+                    found_node1 = None
+                    for node in node_tree.nodes:
+                        if node.label == bake_target_label_m:
+                            found_node = node
                             node_tree.nodes.remove(found_node)
                         
                     for node in node_tree.nodes:
                         if node.label == bake_target_label_uv:
                             found_node1 = node
-                            node_tree.nodes.remove(found_node1)
+                            node_tree.nodes.remove(found_node1) 
 
         samples = int(context.active_object.samples)
         bake_target_label_m = context.active_object.simple_bake_image_name + '_M'
