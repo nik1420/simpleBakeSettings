@@ -414,8 +414,8 @@ class RenderSettM(bpy.types.Operator):##Запекание цвета
                             ########################################################################################### Поиск и пересоединение Металика
                             principled_node = node_tree.nodes.get("Principled BSDF")#нашли общую ноду
                             metalic_input = principled_node.inputs.get("Metallic")#нашли вход металик
-                            emission_input = principled_node.inputs[19]#нашли вход Emission
-                            emission_str = principled_node.inputs[20]
+                            emission_input = principled_node.inputs[27]#нашли вход Emission
+                            emission_str = principled_node.inputs[28]
                             emission_str_val = 1.0
                             connected_node_metalic= None#ищем подключенную ноду к металику
                             connected_socket_metalic = None#ищем ее название
@@ -451,14 +451,14 @@ class RenderSettM(bpy.types.Operator):##Запекание цвета
                 nodes = node_tree.nodes#и в дерево
                 if node_tree:
                     principled_node = node_tree.nodes.get("Principled BSDF")#нашли общую ноду
-                    emission_input_input = principled_node.inputs[19]#нашли вход emission
+                    emission_input_input = principled_node.inputs[27]#нашли вход emission
                     #emission_str_val = 0.0
                     #emission_str = emission_str_val
                     if emission_input_input.is_linked:#если есть какоенибудь соединение
                             link = emission_input_input.links[0]  # Берём первое соединение
                             node_tree.links.remove(link)
                             if mats_bc[index]:#соединяем с тем emi что был до запекания
-                                node_tree.links.new(mats_bc[index][0].outputs[mats_bc[index][1]],principled_node.inputs[19])#соединяем с emission
+                                node_tree.links.new(mats_bc[index][0].outputs[mats_bc[index][1]],principled_node.inputs[27])#соединяем с emission
         ###########################################################################################
 ########удаление использованного из материала
         if(len(cur_obj.data.materials)>0):#если есть материал
