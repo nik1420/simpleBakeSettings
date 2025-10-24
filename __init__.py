@@ -1151,7 +1151,7 @@ class CombineIMG(bpy.types.Operator):
                     found_image = False
                     break
         if(found_image == False):
-            combined_image = bpy.data.images.new("CombinedImage", width=width, height=height,float = True)#создаем картинку
+            combined_image = bpy.data.images.new("CombinedImage", width=width, height=height,float_buffer = True)#создаем картинку
             combined_image.colorspace_settings.name = "Non-Color"#назначаем нужный цветовой профиль
         combined_image.pixels = result_pixels.tolist()
 
