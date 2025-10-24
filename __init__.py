@@ -812,12 +812,12 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
                         else:
                             ########################################################################################### Поиск и пересоединение Металика
                             principled_node = node_tree.nodes.get("Principled BSDF")#нашли общую ноду
-                            roughness_input = principled_node.inputs.get("Roughness")#нашли вход металик
+                            roughness_input = principled_node.inputs[2]#нашли вход roughness
                             emission_input = principled_node.inputs[27]#нашли вход Emission
                             emission_str = principled_node.inputs[28]
                             emission_str_val = 1.0
-                            connected_node_metalic= None#ищем подключенную ноду к металику
-                            connected_socket_metalic = None#ищем ее название
+                            connected_node_roughness= None#ищем подключенную ноду к металику
+                            connected_socket_roughness = None#ищем ее название
                             emission_str.default_value = emission_str_val
                             if emission_input.is_linked:#если есть какоенибудь соединение
                                 link = emission_input.links[0]  # Берём первое соединение
@@ -825,12 +825,12 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
                             if roughness_input.is_linked:#если есть какоенибудь соединение
                                 link = roughness_input.links[0]  # Берём первое соединение
                                 connected_node_roughness = link.from_node  # Нода, откуда идёт связь
-                                connected_node_roughness = link.from_socket.name  # имя, откуда идёт связь
+                                connected_socket_roughness = link.from_socket.name  # имя, откуда идёт связь
                             else:
                                 self.report({'ERROR'}, "Roughness input is not connected on material "+cur_obj.data.materials[index].name)#если не подключен roughness
                                 return {'CANCELLED'}
-                            if connected_node_metalic:#если существует подключенная нода
-                                node_tree.links.new(connected_node_metalic.outputs[connected_node_roughness],principled_node.inputs[27])#соединяем с emission color
+                            if connected_node_roughness:#если существует подключенная нода
+                                node_tree.links.new(connected_node_roughness.outputs[connected_socket_roughness],principled_node.inputs[27])#соединяем с emission color
 
                             texture_image_my = nodes.new(type="ShaderNodeTexImage")#создаем  ноду картинки
                             texture_image_my.label = bake_target_label_R
