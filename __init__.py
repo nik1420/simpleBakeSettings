@@ -374,6 +374,7 @@ class RenderSettAO(bpy.types.Operator):##Запекание цвета
                             node_tree.nodes.active.image = bpy.data.images[bake_target_label_ao]#ставим в выбранную картинку
                             break
         bpy.ops.object.bake(type="AO",use_clear= True) 
+        bpy.types.Scene.ao_name = bake_target_label_ao
 ########удаление использованного из материала
         if(len(cur_obj.data.materials)>0):#если есть материал
             for index, material in enumerate(cur_obj.data.materials):
@@ -488,6 +489,7 @@ class RenderSettM(bpy.types.Operator):##Запекание цвета
                             node_tree.nodes.active.image = bpy.data.images[bake_target_label_m]#ставим в выбранную картинку
                             break
         bpy.ops.object.bake(type="EMIT",use_clear= True) 
+        bpy.types.Scene.m_name = bake_target_label_m
         ############################################################################################Вертаем взад
         if(len(cur_obj.data.materials)>0):#если есть материал
             for index, material in enumerate(cur_obj.data.materials):
