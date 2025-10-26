@@ -324,8 +324,8 @@ class RenderSettAO(bpy.types.Operator):##Запекание цвета
             self.report({'ERROR'}, "Save the file first")
             return {'CANCELLED'}
         samples = int(context.active_object.samples)
-        bake_target_label = context.active_object.simple_bake_image_name
-        bake_target_label_uv = bake_target_label + "_uv"
+        bake_target_label_ao = context.active_object.simple_bake_image_name + '_AO'
+        bake_target_label_uv = bake_target_label_ao + "_uv"
         cur_obj = context.active_object#находим выбранный объект
         #выставление настроек рендера
         cyc_sett = context.scene.cycles
@@ -338,14 +338,14 @@ class RenderSettAO(bpy.types.Operator):##Запекание цвета
         bake_resolution = int(context.active_object.simple_bake_resolution)
         found_image = False
         for image in bpy.data.images:
-            if(image.name == bake_target_label):#если картинка уже существовала
-                    img = bpy.data.images.get(bake_target_label)
+            if(image.name == bake_target_label_ao):#если картинка уже существовала
+                    img = bpy.data.images.get(bake_target_label_ao)
                     bpy.data.images.remove(img)#удаляем ее
                     found_image = False
                     break
         if(found_image == False):
-            bake_img = bpy.ops.image.new(name = bake_target_label,width=bake_resolution,height=bake_resolution,float = True)#создаем картинку
-            bpy.data.images[bake_target_label].colorspace_settings.name = "Non-Color"#назначаем нужный цветовой профиль
+            bake_img = bpy.ops.image.new(name = bake_target_label_ao,width=bake_resolution,height=bake_resolution,float = True)#создаем картинку
+            bpy.data.images[bake_target_label_ao].colorspace_settings.name = "Non-Color"#назначаем нужный цветовой профиль
         if(len(cur_obj.data.materials)>0):#если есть материал
             for index, material in enumerate(cur_obj.data.materials):
                 #настройка материала
@@ -356,7 +356,7 @@ class RenderSettAO(bpy.types.Operator):##Запекание цвета
                     found_node = None
                     found_node1 = None
                     for node in node_tree.nodes:
-                        if node.label == bake_target_label:
+                        if node.label == bake_target_label_ao:
                             found_node = node
                             node_tree.nodes.active = found_node
                         if node.label == bake_target_label_uv:
@@ -365,13 +365,13 @@ class RenderSettAO(bpy.types.Operator):##Запекание цвета
                             break
                         else:
                             texture_image_my = nodes.new(type="ShaderNodeTexImage")#создаем  ноду картинки
-                            texture_image_my.label = bake_target_label
+                            texture_image_my.label = bake_target_label_ao
                             uv_map_node  = nodes.new(type="ShaderNodeUVMap")#создаем ноду юв
                             uv_map_node.label = bake_target_label_uv
                             uv_map_node.uv_map = cur_obj.data.uv_layers.active.name#выбираем юв
                             node_tree.links.new(uv_map_node.outputs['UV'],texture_image_my.inputs['Vector'])#соединяем юв и картинку
                             node_tree.nodes.active = texture_image_my#делаем активной
-                            node_tree.nodes.active.image = bpy.data.images[bake_target_label]#ставим в выбранную картинку
+                            node_tree.nodes.active.image = bpy.data.images[bake_target_label_ao]#ставим в выбранную картинку
                             break
         bpy.ops.object.bake(type="AO",use_clear= True) 
 ########удаление использованного из материала
@@ -385,7 +385,7 @@ class RenderSettAO(bpy.types.Operator):##Запекание цвета
                     found_node = None
                     found_node1 = None
                     for node in node_tree.nodes:
-                        if node.label == bake_target_label:
+                        if node.label == bake_target_label_ao:
                             found_node = node
                             node_tree.nodes.remove(found_node)
                         
@@ -409,8 +409,8 @@ class RenderSettM(bpy.types.Operator):##Запекание цвета
             self.report({'ERROR'}, "Save the file first")
             return {'CANCELLED'}
         samples = int(context.active_object.samples)
-        bake_target_label = context.active_object.simple_bake_image_name
-        bake_target_label_uv = bake_target_label + "_uv"
+        bake_target_label_m = context.active_object.simple_bake_image_name + '_M'
+        bake_target_label_uv = bake_target_label_m + "_uv"
         cur_obj = context.active_object#находим выбранный объект
         #выставление настроек рендера
         cyc_sett = context.scene.cycles
@@ -429,14 +429,14 @@ class RenderSettM(bpy.types.Operator):##Запекание цвета
         found_image = False
         mats_bc = [None] * len(cur_obj.data.materials)
         for image in bpy.data.images:
-            if(image.name == bake_target_label):#если картинка уже существовала
-                img = bpy.data.images.get(bake_target_label)
+            if(image.name == bake_target_label_m):#если картинка уже существовала
+                img = bpy.data.images.get(bake_target_label_m)
                 bpy.data.images.remove(img)#удаляем ее
                 found_image = False
                 break
         if(found_image == False):
-            bake_img = bpy.ops.image.new(name = bake_target_label,width=bake_resolution,height=bake_resolution,float = True)#создаем картинку
-            bpy.data.images[bake_target_label].colorspace_settings.name = "Non-Color"#назначаем нужный цветовой профиль
+            bake_img = bpy.ops.image.new(name = bake_target_label_m,width=bake_resolution,height=bake_resolution,float = True)#создаем картинку
+            bpy.data.images[bake_target_label_m].colorspace_settings.name = "Non-Color"#назначаем нужный цветовой профиль
         if(len(cur_obj.data.materials)>0):#если есть материал
             for index, material in enumerate(cur_obj.data.materials):
                 #настройка материала
@@ -447,7 +447,7 @@ class RenderSettM(bpy.types.Operator):##Запекание цвета
                     found_node = None
                     found_node1 = None
                     for node in node_tree.nodes:
-                        if node.label == bake_target_label:
+                        if node.label == bake_target_label_m:
                             found_node = node
                             node_tree.nodes.active = found_node
                         if node.label == bake_target_label_uv:
@@ -479,13 +479,13 @@ class RenderSettM(bpy.types.Operator):##Запекание цвета
                                 node_tree.links.new(connected_node_metalic.outputs[connected_socket_metalic],principled_node.inputs[27])#соединяем с emission color
 
                             texture_image_my = nodes.new(type="ShaderNodeTexImage")#создаем  ноду картинки
-                            texture_image_my.label = bake_target_label
+                            texture_image_my.label = bake_target_label_m
                             uv_map_node  = nodes.new(type="ShaderNodeUVMap")#создаем ноду юв
                             uv_map_node.label = bake_target_label_uv
                             uv_map_node.uv_map = cur_obj.data.uv_layers.active.name#выбираем юв
                             node_tree.links.new(uv_map_node.outputs['UV'],texture_image_my.inputs['Vector'])#соединяем юв и картинку
                             node_tree.nodes.active = texture_image_my#делаем активной
-                            node_tree.nodes.active.image = bpy.data.images[bake_target_label]#ставим в выбранную картинку
+                            node_tree.nodes.active.image = bpy.data.images[bake_target_label_m]#ставим в выбранную картинку
                             break
         bpy.ops.object.bake(type="EMIT",use_clear= True) 
         ############################################################################################Вертаем взад
@@ -516,7 +516,7 @@ class RenderSettM(bpy.types.Operator):##Запекание цвета
                     found_node = None
                     found_node1 = None
                     for node in node_tree.nodes:
-                        if node.label == bake_target_label:
+                        if node.label == bake_target_label_m:
                             found_node = node
                             node_tree.nodes.remove(found_node)
                         
