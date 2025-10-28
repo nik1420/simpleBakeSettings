@@ -921,21 +921,25 @@ class RenderSettNorm(bpy.types.Operator):##Запекание нормала
                             emission_str = principled_node.inputs[28]#нашли вход Emission strength
                             def_emi_str = emission_str.default_value#сохранили стандартную эмиссию
                             emission_str_val = 1.0#значение силы емиссии
-                            connected_node_roughness= None#ищем подключенную ноду к металику
-                            connected_socket_roughness = None#ищем ее название
+                            connected_node_normal= None#ищем подключенную ноду к нормалу
+                            connected_socket_normal = None#ищем ее название
                             emission_str.default_value = emission_str_val#назначение силы эмиссии
                             if emission_input.is_linked:#если есть какоенибудь соединение
                                 link = emission_input.links[0]  # Берём первое соединение
                                 mats_bc[index] = ( link.from_node, link.from_socket.name )
                             if normal_input.is_linked:#если есть какоенибудь соединение
                                 link = normal_input.links[0]  # Берём первое соединение
-                                connected_node_roughness = link.from_node  # Нода, откуда идёт связь
-                                connected_socket_roughness = link.from_socket.name  # имя, откуда идёт связь
+                                connected_node_normal = link.from_node  # Нода, откуда идёт связь
+                                connected_socket_normal = link.from_socket.name  # имя, откуда идёт связь
+                                color_input_normal = connected_node_normal.inputs[1] # вход цвета ноды нормала
+                                link1 = color_input_normal.links[0]
+                                previous_node_normal = link1.from_node #предыдущая нода от нормала
+                                previous_node_socket = link1.from_socket.name #сокет от предыдущей ноды
                             else:
                                 self.report({'ERROR'}, "Normal input is not connected on material "+cur_obj.data.materials[index].name)#если не подключен normal
                                 return {'CANCELLED'}
-                            if connected_node_roughness:#если существует подключенная нода
-                                node_tree.links.new(connected_node_roughness.outputs[connected_socket_roughness],principled_node.inputs[27])#соединяем с emission color
+                            if previous_node_normal:#если существует подключенная нода
+                                node_tree.links.new(previous_node_normal.outputs[previous_node_socket],principled_node.inputs[27])#соединяем с emission color
 
                             texture_image_my = nodes.new(type="ShaderNodeTexImage")#создаем  ноду картинки
                             texture_image_my.label = bake_target_label_N
