@@ -862,6 +862,7 @@ class RenderSettNorm(bpy.types.Operator):##Запекание нормала
         context.scene.render.engine = 'CYCLES'
         bake_resolution = int(context.active_object.simple_bake_resolution)
         found_image = False
+        mats_ior = [None] * len(cur_obj.data.materials)
         for image in bpy.data.images:
             if(image.name == bake_target_label_N):#если картинка уже существовала
                     img = bpy.data.images.get(bake_target_label_N)
@@ -887,6 +888,18 @@ class RenderSettNorm(bpy.types.Operator):##Запекание нормала
                             found_node1.uv_map = cur_obj.data.uv_layers.active.name
                             break
                         else:
+                            principled_node = node_tree.nodes.get("Principled BSDF")#нашли общую ноду
+                            op_input = principled_node.inputs[3]#нашли вход ior
+                            connected_node_op= None#ищем подключенную ноду к opacity
+                            connected_socket_op = None#ищем ее название
+                            link = None
+                            if op_input.is_linked:#если есть какоенибудь соединение
+                                link = op_input.links[0]  # Берём первое соединение
+                                connected_node_op = link.from_node  # Нода, откуда идёт связь
+                                connected_socket_op = link.from_socket.name  # имя, откуда идёт связь
+                                mats_ior[index] = ( link.from_node, link.from_socket.name )
+                            if connected_node_op:
+                                node_tree.links.remove(link)
                             texture_image_my = nodes.new(type="ShaderNodeTexImage")#создаем  ноду картинки
                             texture_image_my.label = bake_target_label_N
 
@@ -909,6 +922,14 @@ class RenderSettNorm(bpy.types.Operator):##Запекание нормала
                 nodes = node_tree.nodes#и в дерево
                 if node_tree:
                     # Ищем узел с указанным лейблом чтоб не создовать несколько
+                    principled_node = node_tree.nodes.get("Principled BSDF")#нашли общую ноду
+                    op_input = principled_node.inputs[3]#нашли вход op
+                    if op_input.is_linked:
+                        pass
+                    else:
+                        print(mats_ior[index])
+                        if mats_ior[index]:#соединяем с тем op что был до запекания
+                            node_tree.links.new(mats_ior[index][0].outputs[mats_ior[index][1]],principled_node.inputs[3])#соединяем с ior
                     found_node = None
                     found_node1 = None
                     for node in node_tree.nodes:
