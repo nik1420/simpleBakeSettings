@@ -673,7 +673,7 @@ class RenderSettOp(bpy.types.Operator):##Запекание емисии
                             emission_str = principled_node.inputs[28]#нашли вход Emission strength
                             def_emi_str = emission_str.default_value#сохранили стандартную эмиссию
                             emission_str_val = 1.0#значение силы емиссии
-                            connected_node_op= None#ищем подключенную ноду к металику
+                            connected_node_op= None#ищем подключенную ноду к opacity
                             connected_socket_op = None#ищем ее название
                             emission_str.default_value = emission_str_val#назначение силы эмиссии
                             if emission_input.is_linked:#если есть какоенибудь соединение
