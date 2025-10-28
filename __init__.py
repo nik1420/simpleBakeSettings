@@ -22,17 +22,25 @@ bpy.types.Scene.ao_name = bpy.props.StringProperty(
     default=""
 )
 
-
-class RenderBC(bpy.types.Operator):#Метод для РЕНДЕРА цвета на плоскости
-    bl_idname = "object.renderbc"
-    bl_label = "Simple RENDER BC/N"
-
-    def execute(self, context):
+class RenderSettSave(bpy.types.Operator):##Запекание емисии
+    bl_idname = "object.rendersettsave"
+    bl_label = "SAVE BEFORE BAKE!"
+    
+    def execute(self,context):
         if bpy.data.filepath:
             bpy.ops.wm.save_mainfile(filepath=bpy.data.filepath)
         else:
             self.report({'ERROR'}, "Save the file first")
             return {'CANCELLED'}
+        self.report({'WARNING'}, "File saved!")
+        return {'FINISHED'}
+    
+class RenderBC(bpy.types.Operator):#Метод для РЕНДЕРА цвета на плоскости
+    bl_idname = "object.renderbc"
+    bl_label = "Simple RENDER BC/N"
+
+    def execute(self, context):
+
         rend_res_val = context.active_object.simple_bake_image_res
         context.scene.render.resolution_y= int(rend_res_val)
         context.scene.render.resolution_x= int(rend_res_val)
@@ -102,11 +110,7 @@ class RenderSettSelfEmi(bpy.types.Operator):##Запекание цвета
     bl_label = "Simple Bake SELF EMISSION"
     
     def execute(self,context):
-        if bpy.data.filepath:
-            bpy.ops.wm.save_mainfile(filepath=bpy.data.filepath)
-        else:
-            self.report({'ERROR'}, "Save the file first")
-            return {'CANCELLED'}
+
         samples = int(context.active_object.samples)
         bake_target_label = context.active_object.simple_bake_image_name
         bake_target_label_uv = bake_target_label + "_uv"
@@ -188,11 +192,7 @@ class RenderSettBC(bpy.types.Operator):##Запекание цвета
     bl_label = "Simple Bake BC"
     
     def execute(self,context):
-        if bpy.data.filepath:
-            bpy.ops.wm.save_mainfile(filepath=bpy.data.filepath)
-        else:
-            self.report({'ERROR'}, "Save the file first")
-            return {'CANCELLED'}
+
         samples = int(context.active_object.samples)
         bake_target_label_BC = context.active_object.simple_bake_image_name + '_bc'
         bake_target_label_uv = bake_target_label_BC + "_uv"
@@ -318,11 +318,7 @@ class RenderSettAO(bpy.types.Operator):##Запекание цвета
     bl_idname = "object.rendersettao"
     bl_label = "Simple Bake AO"
     def execute(self,context):
-        if bpy.data.filepath:
-            bpy.ops.wm.save_mainfile(filepath=bpy.data.filepath)
-        else:
-            self.report({'ERROR'}, "Save the file first")
-            return {'CANCELLED'}
+
         samples = int(context.active_object.samples)
         bake_target_label_ao = context.active_object.simple_bake_image_name + '_AO'
         bake_target_label_uv = bake_target_label_ao + "_uv"
@@ -404,11 +400,6 @@ class RenderSettM(bpy.types.Operator):##Запекание цвета
     
     def execute(self,context):
         
-        if bpy.data.filepath:
-            bpy.ops.wm.save_mainfile(filepath=bpy.data.filepath)
-        else:
-            self.report({'ERROR'}, "Save the file first")
-            return {'CANCELLED'}
         samples = int(context.active_object.samples)
         bake_target_label_m = context.active_object.simple_bake_image_name + '_M'
         bake_target_label_uv = bake_target_label_m + "_uv"
@@ -534,11 +525,7 @@ class RenderSettEmi(bpy.types.Operator):##Запекание емисии
     bl_label = "Simple Bake Emi"
     
     def execute(self,context):
-        if bpy.data.filepath:
-            bpy.ops.wm.save_mainfile(filepath=bpy.data.filepath)
-        else:
-            self.report({'ERROR'}, "Save the file first")
-            return {'CANCELLED'}
+
         samples = int(context.active_object.samples)
         bake_target_label = context.active_object.simple_bake_image_name
         bake_target_label_uv = bake_target_label + "_uv"
@@ -615,14 +602,10 @@ class RenderSettEmi(bpy.types.Operator):##Запекание емисии
 
 class RenderSettOp(bpy.types.Operator):##Запекание емисии
     bl_idname = "object.rendersettop"
-    bl_label = "Simple Bake OP"
+    bl_label = "Simple Bake OP(IOR input)"
     
     def execute(self,context):
-        if bpy.data.filepath:
-            bpy.ops.wm.save_mainfile(filepath=bpy.data.filepath)
-        else:
-            self.report({'ERROR'}, "Save the file first")
-            return {'CANCELLED'}
+
         samples = int(context.active_object.samples)
         bake_target_label_op = context.active_object.simple_bake_image_name + '_op'
         bake_target_label_uv = bake_target_label_op + "_uv"
@@ -638,6 +621,7 @@ class RenderSettOp(bpy.types.Operator):##Запекание емисии
         bake_resolution = int(context.active_object.simple_bake_resolution)
         found_image = False
         mats_bc = [None] * len(cur_obj.data.materials)
+        mats_m = [None] * len(cur_obj.data.materials)
         bake_img_op = None
         for image in bpy.data.images:
             if(image.name == bake_target_label_op):#если картинка уже существовала
@@ -668,10 +652,15 @@ class RenderSettOp(bpy.types.Operator):##Запекание емисии
                         else:
                             ########################################################################################### Поиск и пересоединение Металика
                             principled_node = node_tree.nodes.get("Principled BSDF")#нашли общую ноду
-                            op_input = principled_node.inputs[4]#нашли вход op
+                            op_input = principled_node.inputs[3]#нашли вход ior
                             bc_input = principled_node.inputs[0]#нашли вход bc
+                            m_input = principled_node.inputs[1]#нашли вход m
                             connected_node_op= None#ищем подключенную ноду к opacity
                             connected_socket_op = None#ищем ее название
+                            if m_input.is_linked:#если есть какоенибудь соединение m
+                                link_m = m_input.links[0]  # Берём первое соединение
+                                mats_m[index] = ( link_m.from_node, link_m.from_socket.name )
+                                node_tree.links.remove(link_m) #удаляем то что в металик идет
                             if bc_input.is_linked:#если есть какоенибудь соединение
                                 link = bc_input.links[0]  # Берём первое соединение
                                 mats_bc[index] = ( link.from_node, link.from_socket.name )
@@ -710,7 +699,8 @@ class RenderSettOp(bpy.types.Operator):##Запекание емисии
                             node_tree.links.remove(link)
                             if mats_bc[index]:#соединяем с тем bc что был до запекания
                                 node_tree.links.new(mats_bc[index][0].outputs[mats_bc[index][1]],principled_node.inputs[0])#соединяем с bc
-        ###########################################################################################
+                            if mats_m[index]:#соединяем с тем bc что был до запекания
+                                node_tree.links.new(mats_m[index][0].outputs[mats_m[index][1]],principled_node.inputs[1])#соединяем с m
 ########удаление использованного из материала
         if(len(cur_obj.data.materials)>0):#если есть материал
             for index, material in enumerate(cur_obj.data.materials):
@@ -737,11 +727,7 @@ class RenderSettRough(bpy.types.Operator):##Запекание емисии
     bl_label = "Simple Bake R"
     
     def execute(self,context):
-        if bpy.data.filepath:
-            bpy.ops.wm.save_mainfile(filepath=bpy.data.filepath)
-        else:
-            self.report({'ERROR'}, "Save the file first")
-            return {'CANCELLED'}
+
         samples = int(context.active_object.samples)
         bake_target_label_R = context.active_object.simple_bake_image_name + '_R'
         bake_target_label_uv = bake_target_label_R + "_uv"
@@ -861,11 +847,7 @@ class RenderSettNorm(bpy.types.Operator):##Запекание нормала
     bl_label = "Simple Bake Normal"
     
     def execute(self,context):
-        if bpy.data.filepath:
-            bpy.ops.wm.save_mainfile(filepath=bpy.data.filepath)
-        else:
-            self.report({'ERROR'}, "Save the file first")
-            return {'CANCELLED'}
+
         samples = int(context.active_object.samples)
         bake_target_label_N = context.active_object.simple_bake_image_name + "_N"
         bake_target_label_uv = bake_target_label_N + "_uv"
@@ -969,11 +951,7 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
     bl_label = "Simple Bake RMAO"
     
     def execute(self,context):
-        if bpy.data.filepath:
-            bpy.ops.wm.save_mainfile(filepath=bpy.data.filepath)
-        else:
-            self.report({'ERROR'}, "Save the file first")
-            return {'CANCELLED'}
+
         samples = int(context.active_object.samples)
         bake_target_label_R = context.active_object.simple_bake_image_name + '_R'
         bake_target_label_uv = bake_target_label_R + "_uv"
@@ -1283,12 +1261,6 @@ class CombineIMG(bpy.types.Operator):
     bl_idname = "object.combinator"
     bl_label = "Combine RMAO"
     def execute(self, context):
-        if bpy.data.filepath:
-            bpy.ops.wm.save_mainfile(filepath=bpy.data.filepath)
-        else:
-            self.report({'ERROR'}, "Save the file first")
-            return {'CANCELLED'}
-        print(bpy.context.scene.r_name)
 
         image_paths_local = {
     "R":bpy.types.Scene.r_name,  # Красный канал
@@ -1327,12 +1299,6 @@ class CombineIMGop(bpy.types.Operator):
     bl_idname = "object.combinatorop"
     bl_label = "Combine RMAOP"
     def execute(self, context):
-        if bpy.data.filepath:
-            bpy.ops.wm.save_mainfile(filepath=bpy.data.filepath)
-        else:
-            self.report({'ERROR'}, "Save the file first")
-            return {'CANCELLED'}
-        print(bpy.context.scene.r_name)
 
         image_paths_local = {
     "R":bpy.types.Scene.r_name,  # Красный канал
@@ -1387,6 +1353,7 @@ class OBJECT_PT_CustomPanel(bpy.types.Panel):
                 row.prop(context.active_object, 'simple_bake_image_name', text="Image name", icon= 'NODE_TEXTURE')
                 row.prop(context.active_object, 'samples', text="Samples")
                 layout.prop(bpy.context.active_object.data.uv_layers,'active_index',text = "UV Map")
+                layout.operator("object.rendersettsave", icon='COLLECTION_COLOR_01')
                 layout.operator("object.rendersettselfemi", icon='RESTRICT_RENDER_OFF')
                 layout.operator("object.rendersettbc", icon='RESTRICT_RENDER_OFF')
                 layout.operator("object.rendersettemi", icon='RESTRICT_RENDER_OFF')
@@ -1414,6 +1381,7 @@ class OBJECT_PT_CustomPanel(bpy.types.Panel):
 # Регистрация классов
 def register():
     ## Classes
+    bpy.utils.register_class(RenderSettSave)
     bpy.utils.register_class(RenderSettEmi)
     bpy.utils.register_class(RenderSettSelfEmi)
     bpy.utils.register_class(RenderSettBC)
@@ -1435,6 +1403,7 @@ def register():
 
 
 def unregister():
+    bpy.utils.unregister_class(RenderSettSave)
     bpy.utils.unregister_class(RenderSettEmi)
     bpy.utils.unregister_class(RenderSettSelfEmi)
     bpy.utils.unregister_class(RenderSettBC)
