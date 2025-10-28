@@ -669,15 +669,11 @@ class RenderSettOp(bpy.types.Operator):##Запекание емисии
                             ########################################################################################### Поиск и пересоединение Металика
                             principled_node = node_tree.nodes.get("Principled BSDF")#нашли общую ноду
                             op_input = principled_node.inputs[4]#нашли вход op
-                            emission_input = principled_node.inputs[27]#нашли вход Emission
-                            emission_str = principled_node.inputs[28]#нашли вход Emission strength
-                            def_emi_str = emission_str.default_value#сохранили стандартную эмиссию
-                            emission_str_val = 1.0#значение силы емиссии
+                            bc_input = principled_node.inputs[0]#нашли вход bc
                             connected_node_op= None#ищем подключенную ноду к opacity
                             connected_socket_op = None#ищем ее название
-                            emission_str.default_value = emission_str_val#назначение силы эмиссии
-                            if emission_input.is_linked:#если есть какоенибудь соединение
-                                link = emission_input.links[0]  # Берём первое соединение
+                            if bc_input.is_linked:#если есть какоенибудь соединение
+                                link = bc_input.links[0]  # Берём первое соединение
                                 mats_bc[index] = ( link.from_node, link.from_socket.name )
                             if op_input.is_linked:#если есть какоенибудь соединение
                                 link = op_input.links[0]  # Берём первое соединение
@@ -687,7 +683,7 @@ class RenderSettOp(bpy.types.Operator):##Запекание емисии
                                 self.report({'ERROR'}, "Opacity input is not connected on material "+cur_obj.data.materials[index].name)#если не подключен op
                                 return {'CANCELLED'}
                             if connected_node_op:#если существует подключенная нода
-                                node_tree.links.new(connected_node_op.outputs[connected_socket_op],principled_node.inputs[27])#соединяем с emission color
+                                node_tree.links.new(connected_node_op.outputs[connected_socket_op],principled_node.inputs[0])#соединяем с bc
 
                             texture_image_my = nodes.new(type="ShaderNodeTexImage")#создаем  ноду картинки
                             texture_image_my.label = bake_target_label_op
@@ -698,7 +694,7 @@ class RenderSettOp(bpy.types.Operator):##Запекание емисии
                             node_tree.nodes.active = texture_image_my#делаем активной
                             node_tree.nodes.active.image = bpy.data.images[bake_target_label_op]#ставим в выбранную картинку
                             break
-        bpy.ops.object.bake(type="EMIT",use_clear= True) 
+        bpy.ops.object.bake(type="DIFFUSE",use_clear= True) 
         bpy.types.Scene.op_name = bake_target_label_op
         ############################################################################################Вертаем взад
         if(len(cur_obj.data.materials)>0):#если есть материал
@@ -708,14 +704,12 @@ class RenderSettOp(bpy.types.Operator):##Запекание емисии
                 nodes = node_tree.nodes#и в дерево
                 if node_tree:
                     principled_node = node_tree.nodes.get("Principled BSDF")#нашли общую ноду
-                    emission_input_input = principled_node.inputs[27]#нашли вход emission
-                    emission_str = principled_node.inputs[28]
-                    emission_str.default_value = def_emi_str
-                    if emission_input_input.is_linked:#если есть какоенибудь соединение
-                            link = emission_input_input.links[0]  # Берём первое соединение
+                    bc_input = principled_node.inputs[0]#нашли вход bc
+                    if bc_input.is_linked:#если есть какоенибудь соединение
+                            link = bc_input.links[0]  # Берём первое соединение
                             node_tree.links.remove(link)
-                            if mats_bc[index]:#соединяем с тем emi что был до запекания
-                                node_tree.links.new(mats_bc[index][0].outputs[mats_bc[index][1]],principled_node.inputs[27])#соединяем с emission
+                            if mats_bc[index]:#соединяем с тем bc что был до запекания
+                                node_tree.links.new(mats_bc[index][0].outputs[mats_bc[index][1]],principled_node.inputs[0])#соединяем с bc
         ###########################################################################################
 ########удаление использованного из материала
         if(len(cur_obj.data.materials)>0):#если есть материал
