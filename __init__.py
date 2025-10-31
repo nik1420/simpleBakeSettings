@@ -844,7 +844,8 @@ class RenderSettRough(bpy.types.Operator):##Запекание емисии
 
 class RenderSettNorm(bpy.types.Operator):##Запекание нормала
     bl_idname = "object.rendersettnorm"
-    bl_label = "Simple Bake Normal"
+    bl_label = "Simple Bake N     (DESCRIPTION)"
+    bl_description = "if you want to review baked normal in material after baking select uv that your baking to in normal map node or delete base uv cuz it brokes it"
     
     def execute(self,context):
 
@@ -854,6 +855,7 @@ class RenderSettNorm(bpy.types.Operator):##Запекание нормала
         cur_obj = bpy.context.active_object#находим выбранный объект
         cyc_sett = bpy.data.scenes["Scene"].cycles
         cyc_sett.bake_type = 'NORMAL'
+        bpy.data.scenes["Scene"].render.bake.normal_space = 'OBJECT'#СНАЧАЛА запекаем в обджект спейсе потому что блендер тупит с тангенс спейсом
         cyc_sett = context.scene.cycles
         cyc_sett.device = "GPU"
         cyc_sett.use_adaptive_sampling = False
@@ -863,6 +865,8 @@ class RenderSettNorm(bpy.types.Operator):##Запекание нормала
         bake_resolution = int(context.active_object.simple_bake_resolution)
         found_image = False
         mats_ior = [None] * len(cur_obj.data.materials)
+        mats_n = [None] * len(cur_obj.data.materials)
+        node_normal_object = None
         for image in bpy.data.images:
             if(image.name == bake_target_label_N):#если картинка уже существовала
                     img = bpy.data.images.get(bake_target_label_N)
@@ -890,6 +894,9 @@ class RenderSettNorm(bpy.types.Operator):##Запекание нормала
                         else:
                             principled_node = node_tree.nodes.get("Principled BSDF")#нашли общую ноду
                             op_input = principled_node.inputs[3]#нашли вход ior
+                            n_input = principled_node.inputs[5]#нашли вход normal
+                            connected_node_n= None#ищем подключенную ноду к normal
+                            connected_socket_n = None#ищем ее название
                             connected_node_op= None#ищем подключенную ноду к opacity
                             connected_socket_op = None#ищем ее название
                             link = None
@@ -898,22 +905,55 @@ class RenderSettNorm(bpy.types.Operator):##Запекание нормала
                                 connected_node_op = link.from_node  # Нода, откуда идёт связь
                                 connected_socket_op = link.from_socket.name  # имя, откуда идёт связь
                                 mats_ior[index] = ( link.from_node, link.from_socket.name )
+                            if n_input.is_linked:#если есть какоенибудь соединение с нормалом
+                                link_n = n_input.links[0]  # Берём первое соединение
+                                connected_node_n = link_n.from_node  # Нода, откуда идёт связь
+                                connected_socket_n = link_n.from_socket.name  # имя, откуда идёт связь
+                                mats_n[index] = ( link_n.from_node, link_n.from_socket.name )#запоминаем что было до запекания
                             if connected_node_op:
                                 node_tree.links.remove(link)
                             texture_image_my = nodes.new(type="ShaderNodeTexImage")#создаем  ноду картинки
+                            texture_image_my_second = nodes.new(type="ShaderNodeTexImage")#создаем  ноду картинки для второго прохода запекания
+                            node_normal_object = nodes.new(type="ShaderNodeNormalMap")#создаем ноду нормал мап
+                            node_normal_object.name = 'NormalMapObject'# обзываем ее чтоб не путать потом
+                            node_normal_object.label = 'NormalMapObject'# обзываем ее чтоб не путать потом
+                            node_normal_object.space = 'OBJECT'#ставим обджект спейс
                             texture_image_my.label = bake_target_label_N
+                            texture_image_my_second.label = bake_target_label_N #вторая нода для тангенс спейса
 
                             uv_map_node  = nodes.new(type="ShaderNodeUVMap")#создаем ноду юв
                             uv_map_node.label = bake_target_label_uv
                             uv_map_node.uv_map = cur_obj.data.uv_layers.active.name#выбираем юв
 
                             node_tree.links.new(uv_map_node.outputs['UV'],texture_image_my.inputs['Vector'])#соединяем юв и картинку
+                            node_tree.links.new(uv_map_node.outputs['UV'],texture_image_my_second.inputs['Vector'])#соединяем юв и вторую картинку
+                            node_tree.links.new(texture_image_my_second.outputs['Color'],node_normal_object.inputs['Color'])#соединяем вторую картинку и нормал мап
                             bake_resolution = int(context.active_object.simple_bake_resolution)
                             
-                            node_tree.nodes.active = texture_image_my#делаем активной
+                            node_tree.nodes.active = texture_image_my_second#делаем активной текстуру для тангенс спейса
+                            node_tree.nodes.active.image = bpy.data.images[bake_target_label_N]#ставим в выбранную картинку
+                            node_tree.nodes.active = texture_image_my#делаем активной основную для запекания обджект спейса
                             node_tree.nodes.active.image = bpy.data.images[bake_target_label_N]#ставим в выбранную картинку    
                             break
         bpy.ops.object.bake(type="NORMAL",use_clear= True) 
+        if(len(cur_obj.data.materials)>0):#если есть материал
+            for index, material in enumerate(cur_obj.data.materials):
+                node_tree = material.node_tree#лезем в ноды
+                nodes = node_tree.nodes#и в дерево
+                if node_tree:
+                    for node in node_tree.nodes:
+                        if node.label == bake_target_label_N:
+                            found_node = node
+                            node_tree.nodes.active = found_node
+                            break
+                        else:
+                            principled_node = node_tree.nodes.get("Principled BSDF")#нашли общую ноду
+                            if connected_node_n:
+                                node_tree.links.remove(link_n)
+                            node_tree.links.new(node_normal_object.outputs['Normal'],principled_node.inputs[5])#соединяем с normal
+                            break
+        bpy.data.scenes["Scene"].render.bake.normal_space = 'TANGENT'#возвращаем тангенс спейс обратно
+        bpy.ops.object.bake(type="NORMAL",use_clear= False)#второй проход запекания в тангенс спейсе
         ########удаление использованного из материала
         if(len(cur_obj.data.materials)>0):#если есть материал
             for index, material in enumerate(cur_obj.data.materials):
@@ -923,6 +963,7 @@ class RenderSettNorm(bpy.types.Operator):##Запекание нормала
                 if node_tree:
                     # Ищем узел с указанным лейблом чтоб не создовать несколько
                     principled_node = node_tree.nodes.get("Principled BSDF")#нашли общую ноду
+                    new_n_node = node_tree.nodes.get('NormalMapObject')#нашли ноду нормал мап
                     op_input = principled_node.inputs[3]#нашли вход op
                     if op_input.is_linked:
                         pass
@@ -930,13 +971,20 @@ class RenderSettNorm(bpy.types.Operator):##Запекание нормала
                         print(mats_ior[index])
                         if mats_ior[index]:#соединяем с тем op что был до запекания
                             node_tree.links.new(mats_ior[index][0].outputs[mats_ior[index][1]],principled_node.inputs[3])#соединяем с ior
+                        if mats_n[index]:#соединяем с тем n что был до запекания
+                            node_tree.links.new(mats_n[index][0].outputs[mats_n[index][1]],principled_node.inputs[5])#соединяем с normal
                     found_node = None
                     found_node1 = None
                     for node in node_tree.nodes:
                         if node.label == bake_target_label_N:
                             found_node = node
                             node_tree.nodes.remove(found_node)
-                        
+
+                    for node in node_tree.nodes:
+                        if node == new_n_node:
+                            found_node2 = node
+                            node_tree.nodes.remove(found_node2)
+            
                     for node in node_tree.nodes:
                         if node.label == bake_target_label_uv:
                             found_node1 = node
