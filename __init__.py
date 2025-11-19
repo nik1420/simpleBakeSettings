@@ -118,6 +118,7 @@ class RenderSettSelfEmi(bpy.types.Operator):##Запекание цвета
         #выставление настроек рендера
         cyc_sett = context.scene.cycles
         cyc_sett.device = "GPU"
+        bpy.data.scenes["Scene"].render.bake.use_selected_to_active = False
         cyc_sett.use_adaptive_sampling = False
         cyc_sett.use_denoising = False
         cyc_sett.samples = samples
@@ -200,6 +201,7 @@ class RenderSettBC(bpy.types.Operator):##Запекание цвета
         #выставление настроек рендера
         cyc_sett = context.scene.cycles
         cyc_sett.device = "GPU"
+        bpy.data.scenes["Scene"].render.bake.use_selected_to_active = False
         cyc_sett.use_adaptive_sampling = False
         cyc_sett.use_denoising = False
         cyc_sett.samples = samples
@@ -329,6 +331,7 @@ class RenderSettAO(bpy.types.Operator):##Запекание цвета
         cyc_sett.use_adaptive_sampling = False
         cyc_sett.use_denoising = False
         cyc_sett.samples = samples
+        bpy.data.scenes["Scene"].render.bake.use_selected_to_active = False
         cyc_sett.bake_type = 'AO'
         context.scene.render.engine = 'CYCLES'
         bake_resolution = int(context.active_object.simple_bake_resolution)
@@ -407,6 +410,7 @@ class RenderSettM(bpy.types.Operator):##Запекание цвета
         #выставление настроек рендера
         cyc_sett = context.scene.cycles
         cyc_sett.device = "GPU"
+        bpy.data.scenes["Scene"].render.bake.use_selected_to_active = False
         cyc_sett.use_adaptive_sampling = False
         cyc_sett.use_denoising = False
         cyc_sett.samples = samples
@@ -534,6 +538,7 @@ class RenderSettEmi(bpy.types.Operator):##Запекание емисии
         cyc_sett.bake_type = 'EMIT'
         cyc_sett = context.scene.cycles
         cyc_sett.device = "GPU"
+        bpy.data.scenes["Scene"].render.bake.use_selected_to_active = False
         cyc_sett.use_adaptive_sampling = False
         cyc_sett.use_denoising = False
         cyc_sett.samples = samples
@@ -614,6 +619,7 @@ class RenderSettOp(bpy.types.Operator):##Запекание емисии
         cyc_sett.bake_type = 'EMIT'
         cyc_sett = context.scene.cycles
         cyc_sett.device = "GPU"
+        bpy.data.scenes["Scene"].render.bake.use_selected_to_active = False
         cyc_sett.use_adaptive_sampling = False
         cyc_sett.use_denoising = False
         cyc_sett.samples = samples
@@ -735,6 +741,7 @@ class RenderSettRough(bpy.types.Operator):##Запекание емисии
         cyc_sett = bpy.data.scenes["Scene"].cycles
         cyc_sett = context.scene.cycles
         cyc_sett.device = "GPU"
+        bpy.data.scenes["Scene"].render.bake.use_selected_to_active = False
         cyc_sett.use_adaptive_sampling = False
         cyc_sett.use_denoising = False
         cyc_sett.samples = samples
@@ -858,6 +865,7 @@ class RenderSettNorm(bpy.types.Operator):##Запекание нормала
         bpy.data.scenes["Scene"].render.bake.normal_space = 'OBJECT'#СНАЧАЛА запекаем в обджект спейсе потому что блендер тупит с тангенс спейсом
         cyc_sett = context.scene.cycles
         cyc_sett.device = "GPU"
+        bpy.data.scenes["Scene"].render.bake.use_selected_to_active = False
         cyc_sett.use_adaptive_sampling = False
         cyc_sett.use_denoising = False
         cyc_sett.samples = samples
@@ -1029,6 +1037,7 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
         cyc_sett.bake_type = 'ROUGHNESS'
         cyc_sett = context.scene.cycles
         cyc_sett.device = "GPU"
+        bpy.data.scenes["Scene"].render.bake.use_selected_to_active = False
         cyc_sett.use_adaptive_sampling = False
         cyc_sett.use_denoising = False
         cyc_sett.samples = samples
@@ -1142,6 +1151,7 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
         #выставление настроек рендера
         cyc_sett = context.scene.cycles
         cyc_sett.device = "GPU"
+        bpy.data.scenes["Scene"].render.bake.use_selected_to_active = False
         cyc_sett.use_adaptive_sampling = False
         cyc_sett.use_denoising = False
         cyc_sett.samples = samples
@@ -1259,6 +1269,7 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
         #выставление настроек рендера
         cyc_sett = context.scene.cycles
         cyc_sett.device = "GPU"
+        bpy.data.scenes["Scene"].render.bake.use_selected_to_active = False
         cyc_sett.use_adaptive_sampling = False
         cyc_sett.use_denoising = False
         cyc_sett.bake_type = 'AO'
