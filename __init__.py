@@ -60,10 +60,10 @@ class RenderBC(bpy.types.Operator):#Метод для РЕНДЕРА цвета 
         context.scene.view_layers["ViewLayer"].use_pass_normal = True# вкючаем пас нормала
         workspaces = bpy.data.workspaces
         context.window.workspace = workspaces.get("Compositing")
-        if bpy.data.node_groups.get("Compositor Nodes"):#проверяем есть ли уже композитор
+        if bpy.data.node_groups.get("NodeTree"):#проверяем есть ли уже композитор
             pass
         else:
-            bpy.ops.node.new_compositing_node_group()
+            bpy.ops.node.new_compositing_node_group(name = 'NodeTree')
         node_tree = bpy.data.node_groups["NodeTree"]
         #bpy.data.screens["Compositing"].areas[3].spaces[0].
         render_layers_node = None#объявление переменных для композитора
