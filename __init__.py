@@ -58,9 +58,14 @@ class RenderBC(bpy.types.Operator):#Метод для РЕНДЕРА цвета 
         context.scene.camera = camera_obj
         context.scene.view_layers["ViewLayer"].use_pass_diffuse_color = True#включаем пасс цвета в слоях
         context.scene.view_layers["ViewLayer"].use_pass_normal = True# вкючаем пас нормала
-        context.scene.use_nodes = True
-        node_tree = context.scene.node_tree
-
+        workspaces = bpy.data.workspaces
+        context.window.workspace = workspaces.get("Compositing")
+        if bpy.data.node_groups.get("Compositor Nodes"):#проверяем есть ли уже композитор
+            pass
+        else:
+            bpy.ops.node.new_compositing_node_group()
+        node_tree = bpy.data.node_groups["NodeTree"]
+        #bpy.data.screens["Compositing"].areas[3].spaces[0].
         render_layers_node = None#объявление переменных для композитора
         render_viewer_nodeBC = None
         render_viewer_nodeN = None
@@ -74,7 +79,7 @@ class RenderBC(bpy.types.Operator):#Метод для РЕНДЕРА цвета 
         render_viewer_nodeN.label = 'ViewerN'#и ноду вывода
         render_viewer_nodeBC.location = (300,0)#двигаем чтоб красиво было
         render_viewer_nodeN.location = (300,-200)#двигаем чтоб красиво было
-        node_tree.links.new(render_layers_node.outputs['DiffCol'],render_viewer_nodeBC.inputs['Image'])#соединяем их
+        node_tree.links.new(render_layers_node.outputs['Diffuse Color'],render_viewer_nodeBC.inputs['Image'])#соединяем их
         node_tree.links.new(render_layers_node.outputs['Normal'],render_viewer_nodeN.inputs['Image'])#соединяем их
         bpy.data.objects.remove(plane_obj,do_unlink=True)#удаляем камеру и плейн
         bpy.data.objects.remove(camera_obj,do_unlink=True)
@@ -243,7 +248,8 @@ class RenderSettBC(bpy.types.Operator):##Запекание цвета
                             break
                         else:
                             ########################################################################################### Поиск и пересоединение Металика
-                            principled_node = node_tree.nodes.get("Principled BSDF")#нашли общую ноду
+                            output_node = node_tree.nodes.get("Material Output")#нашли общую ноду ##Material Output
+                            principled_node = output_node.inputs[0].links[0].from_node#нашли ноду принциплед
                             BC_input = principled_node.inputs[0]#нашли вход BC
                             emission_input = principled_node.inputs[27]#нашли вход Emission
                             emission_str = principled_node.inputs[28]#нашли вход Emission strength
@@ -282,7 +288,8 @@ class RenderSettBC(bpy.types.Operator):##Запекание цвета
                 node_tree = material.node_tree#лезем в ноды
                 nodes = node_tree.nodes#и в дерево
                 if node_tree:
-                    principled_node = node_tree.nodes.get("Principled BSDF")#нашли общую ноду
+                    output_node = node_tree.nodes.get("Material Output")#нашли общую ноду ##Material Output
+                    principled_node = output_node.inputs[0].links[0].from_node#нашли ноду принциплед
                     emission_input_input = principled_node.inputs[27]#нашли вход emission
                     emission_str = principled_node.inputs[28]
                     emission_str.default_value = def_emi_str#возвращаем силу емиссии
@@ -452,7 +459,8 @@ class RenderSettM(bpy.types.Operator):##Запекание цвета
                             break
                         else:
                             ########################################################################################### Поиск и пересоединение Металика
-                            principled_node = node_tree.nodes.get("Principled BSDF")#нашли общую ноду
+                            output_node = node_tree.nodes.get("Material Output")#нашли общую ноду ##Material Output
+                            principled_node = output_node.inputs[0].links[0].from_node#нашли ноду принциплед
                             metalic_input = principled_node.inputs.get("Metallic")#нашли вход металик
                             emission_input = principled_node.inputs[27]#нашли вход Emission
                             emission_str = principled_node.inputs[28]#нашли вход Emission strength
@@ -492,7 +500,8 @@ class RenderSettM(bpy.types.Operator):##Запекание цвета
                 node_tree = material.node_tree#лезем в ноды
                 nodes = node_tree.nodes#и в дерево
                 if node_tree:
-                    principled_node = node_tree.nodes.get("Principled BSDF")#нашли общую ноду
+                    output_node = node_tree.nodes.get("Material Output")#нашли общую ноду ##Material Output
+                    principled_node = output_node.inputs[0].links[0].from_node#нашли ноду принциплед
                     emission_input_input = principled_node.inputs[27]#нашли вход emission
                     emission_str = principled_node.inputs[28]
                     emission_str.default_value = def_emi_str#возвращаем силу емиссии
@@ -657,7 +666,8 @@ class RenderSettOp(bpy.types.Operator):##Запекание емисии
                             break
                         else:
                             ########################################################################################### Поиск и пересоединение Металика
-                            principled_node = node_tree.nodes.get("Principled BSDF")#нашли общую ноду
+                            output_node = node_tree.nodes.get("Material Output")#нашли общую ноду ##Material Output
+                            principled_node = output_node.inputs[0].links[0].from_node#нашли ноду принциплед
                             op_input = principled_node.inputs[3]#нашли вход ior
                             bc_input = principled_node.inputs[0]#нашли вход bc
                             m_input = principled_node.inputs[1]#нашли вход m
@@ -698,7 +708,8 @@ class RenderSettOp(bpy.types.Operator):##Запекание емисии
                 node_tree = material.node_tree#лезем в ноды
                 nodes = node_tree.nodes#и в дерево
                 if node_tree:
-                    principled_node = node_tree.nodes.get("Principled BSDF")#нашли общую ноду
+                    output_node = node_tree.nodes.get("Material Output")#нашли общую ноду ##Material Output
+                    principled_node = output_node.inputs[0].links[0].from_node#нашли ноду принциплед
                     bc_input = principled_node.inputs[0]#нашли вход bc
                     if bc_input.is_linked:#если есть какоенибудь соединение
                             link = bc_input.links[0]  # Берём первое соединение
@@ -778,7 +789,8 @@ class RenderSettRough(bpy.types.Operator):##Запекание емисии
                             break
                         else:
                             ########################################################################################### Поиск и пересоединение Металика
-                            principled_node = node_tree.nodes.get("Principled BSDF")#нашли общую ноду
+                            output_node = node_tree.nodes.get("Material Output")#нашли общую ноду ##Material Output
+                            principled_node = output_node.inputs[0].links[0].from_node#нашли ноду принциплед
                             roughness_input = principled_node.inputs[2]#нашли вход roughness
                             emission_input = principled_node.inputs[27]#нашли вход Emission
                             emission_str = principled_node.inputs[28]#нашли вход Emission strength
@@ -818,7 +830,8 @@ class RenderSettRough(bpy.types.Operator):##Запекание емисии
                 node_tree = material.node_tree#лезем в ноды
                 nodes = node_tree.nodes#и в дерево
                 if node_tree:
-                    principled_node = node_tree.nodes.get("Principled BSDF")#нашли общую ноду
+                    output_node = node_tree.nodes.get("Material Output")#нашли общую ноду ##Material Output
+                    principled_node = output_node.inputs[0].links[0].from_node#нашли ноду принциплед
                     emission_input_input = principled_node.inputs[27]#нашли вход emission
                     emission_str = principled_node.inputs[28]
                     emission_str.default_value = def_emi_str
@@ -900,7 +913,8 @@ class RenderSettNorm(bpy.types.Operator):##Запекание нормала
                             found_node1.uv_map = cur_obj.data.uv_layers.active.name
                             break
                         else:
-                            principled_node = node_tree.nodes.get("Principled BSDF")#нашли общую ноду
+                            output_node = node_tree.nodes.get("Material Output")#нашли общую ноду ##Material Output
+                            principled_node = output_node.inputs[0].links[0].from_node#нашли ноду принциплед
                             op_input = principled_node.inputs[3]#нашли вход ior
                             n_input = principled_node.inputs[5]#нашли вход normal
                             connected_node_n= None#ищем подключенную ноду к normal
@@ -955,7 +969,8 @@ class RenderSettNorm(bpy.types.Operator):##Запекание нормала
                             node_tree.nodes.active = found_node
                             break
                         else:
-                            principled_node = node_tree.nodes.get("Principled BSDF")#нашли общую ноду
+                            output_node = node_tree.nodes.get("Material Output")#нашли общую ноду ##Material Output
+                            principled_node = output_node.inputs[0].links[0].from_node#нашли ноду принциплед
                             if connected_node_n:
                                 node_tree.links.remove(link_n)
                             node_tree.links.new(node_normal_object.outputs['Normal'],principled_node.inputs[5])#соединяем с normal
@@ -970,7 +985,8 @@ class RenderSettNorm(bpy.types.Operator):##Запекание нормала
                 nodes = node_tree.nodes#и в дерево
                 if node_tree:
                     # Ищем узел с указанным лейблом чтоб не создовать несколько
-                    principled_node = node_tree.nodes.get("Principled BSDF")#нашли общую ноду
+                    output_node = node_tree.nodes.get("Material Output")#нашли общую ноду ##Material Output
+                    principled_node = output_node.inputs[0].links[0].from_node#нашли ноду принциплед
                     new_n_node = node_tree.nodes.get('NormalMapObject')#нашли ноду нормал мап
                     op_input = principled_node.inputs[3]#нашли вход op
                     if op_input.is_linked:
@@ -1017,7 +1033,7 @@ class RenderEngineEevee(bpy.types.Operator):
     bl_idname = "object.re_eevee"
     bl_label = "Set Eevee"
     def execute(self, context):
-        context.scene.render.engine = 'BLENDER_EEVEE_NEXT'#включаем еву
+        context.scene.render.engine = 'BLENDER_EEVEE'#включаем еву
         context.scene.eevee.taa_render_samples = 16#настройки евы
         context.scene.eevee.use_shadows = False
         return {'FINISHED'}
@@ -1074,7 +1090,8 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
                             break
                         else:
                             ########################################################################################### Поиск и пересоединение Металика
-                            principled_node = node_tree.nodes.get("Principled BSDF")#нашли общую ноду
+                            output_node = node_tree.nodes.get("Material Output")#нашли общую ноду ##Material Output
+                            principled_node = output_node.inputs[0].links[0].from_node#нашли ноду принциплед
                             roughness_input = principled_node.inputs[2]#нашли вход roughness
                             emission_input = principled_node.inputs[27]#нашли вход Emission
                             emission_str = principled_node.inputs[28]
@@ -1114,7 +1131,8 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
                 node_tree = material.node_tree#лезем в ноды
                 nodes = node_tree.nodes#и в дерево
                 if node_tree:
-                    principled_node = node_tree.nodes.get("Principled BSDF")#нашли общую ноду
+                    output_node = node_tree.nodes.get("Material Output")#нашли общую ноду ##Material Output
+                    principled_node = output_node.inputs[0].links[0].from_node#нашли ноду принциплед
                     emission_input_input = principled_node.inputs[27]#нашли вход emission
                     emission_str = principled_node.inputs[28]
                     emission_str.default_value = def_emi_str#возвращаем стандартную эмиссию
@@ -1193,7 +1211,8 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
                             break
                         else:
                             ########################################################################################### Поиск и пересоединение Металика
-                            principled_node = node_tree.nodes.get("Principled BSDF")#нашли общую ноду
+                            output_node = node_tree.nodes.get("Material Output")#нашли общую ноду ##Material Output
+                            principled_node = output_node.inputs[0].links[0].from_node#нашли ноду принциплед
                             metalic_input = principled_node.inputs.get("Metallic")#нашли вход металик
                             emission_input = principled_node.inputs[27]#нашли вход Emission
                             emission_str = principled_node.inputs[28]
@@ -1233,7 +1252,8 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
                 node_tree = material.node_tree#лезем в ноды
                 nodes = node_tree.nodes#и в дерево
                 if node_tree:
-                    principled_node = node_tree.nodes.get("Principled BSDF")#нашли общую ноду
+                    output_node = node_tree.nodes.get("Material Output")#нашли общую ноду ##Material Output
+                    principled_node = output_node.inputs[0].links[0].from_node#нашли ноду принциплед
                     emission_input_input = principled_node.inputs[27]#нашли вход emission
                     emission_str = principled_node.inputs[28]
                     emission_str.default_value = def_emi_str#возвращаем стандартную эмиссию
