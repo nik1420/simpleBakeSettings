@@ -4,7 +4,7 @@ schema_version = "1.0.0"
 # Change the values according to your extension
 id = "render_bake_settings"
 version = "1.0.0"
-name = "Set_Render-Up"
+name = "SimpleBakeSettings"
 tagline = "Set simple bake panel,N Panel-Tools"
 maintainer = "nik1420"
 # Supported types: "add-on", "theme"
