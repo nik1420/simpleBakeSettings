@@ -1608,7 +1608,7 @@ def register_properties():
 
     bpy.types.Object.samples = StringProperty(
         name = "Samples",
-        default="100"
+        default="10"
     )
     bpy.types.Object.simple_bake_image_res = StringProperty(
         name = "Render Resolution",
