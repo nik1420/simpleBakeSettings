@@ -235,6 +235,15 @@ class RenderSettBC(bpy.types.Operator):##Запекание цвета
                 node_tree = material.node_tree#лезем в ноды
                 nodes = node_tree.nodes#и в дерево
                 if node_tree:
+                    output_node = node_tree.nodes.get("Material Output")#нашли общую ноду ##Material Output
+                    principled_node = output_node.inputs[0].links[0].from_node#нашли ноду принциплед
+                    BC_input = principled_node.inputs[0]#нашли вход BC
+                    if BC_input.is_linked == False:
+                        self.report({'ERROR'}, "Base Color input is not connected on material "+cur_obj.data.materials[index].name)#если не подключен металик
+                        return {'CANCELLED'}
+                    else:
+                        pass
+                if node_tree:
                     # Ищем узел с указанным лейблом чтоб не создовать несколько
                     found_node = None
                     found_node1 = None
@@ -446,6 +455,15 @@ class RenderSettM(bpy.types.Operator):##Запекание цвета
                 node_tree = material.node_tree#лезем в ноды
                 nodes = node_tree.nodes#и в дерево
                 if node_tree:
+                    output_node = node_tree.nodes.get("Material Output")#нашли общую ноду ##Material Output
+                    principled_node = output_node.inputs[0].links[0].from_node#нашли ноду принциплед
+                    metalic_input = principled_node.inputs.get("Metallic")#нашли вход металик
+                    if metalic_input.is_linked == False:
+                        self.report({'ERROR'}, "Metallic input is not connected on material "+cur_obj.data.materials[index].name)#если не подключен металик
+                        return {'CANCELLED'}
+                    else:
+                        pass
+                if node_tree:
                     # Ищем узел с указанным лейблом чтоб не создовать несколько
                     found_node = None
                     found_node1 = None
@@ -568,6 +586,15 @@ class RenderSettEmi(bpy.types.Operator):##Запекание емисии
                 node_tree = material.node_tree#лезем в ноды
                 nodes = node_tree.nodes#и в дерево
                 if node_tree:
+                    output_node = node_tree.nodes.get("Material Output")#нашли общую ноду ##Material Output
+                    principled_node = output_node.inputs[0].links[0].from_node#нашли ноду принциплед
+                    emission_input = principled_node.inputs[27]#нашли вход эмисии
+                    if emission_input.is_linked == False:
+                        self.report({'ERROR'}, "Emission input is not connected on material "+cur_obj.data.materials[index].name)#если не подключен эмиссионный
+                        return {'CANCELLED'}
+                    else:
+                        pass
+                if node_tree:
                     # Ищем узел с указанным лейблом чтоб не создовать несколько
                     found_node = None
                     for node in node_tree.nodes:
@@ -652,6 +679,15 @@ class RenderSettOp(bpy.types.Operator):##Запекание емисии
                 #настройка материала
                 node_tree = material.node_tree#лезем в ноды
                 nodes = node_tree.nodes#и в дерево
+                if node_tree:
+                    output_node = node_tree.nodes.get("Material Output")#нашли общую ноду ##Material Output
+                    principled_node = output_node.inputs[0].links[0].from_node#нашли ноду принциплед
+                    ior_input = principled_node.inputs[3]#нашли вход ior
+                    if ior_input.is_linked == False:
+                        self.report({'ERROR'}, "IOR input is not connected on material "+cur_obj.data.materials[index].name)#если не подключен ior
+                        return {'CANCELLED'}
+                    else:
+                        pass
                 if node_tree:
                     # Ищем узел с указанным лейблом чтоб не создовать несколько
                     found_node = None
@@ -775,6 +811,15 @@ class RenderSettRough(bpy.types.Operator):##Запекание емисии
                 #настройка материала
                 node_tree = material.node_tree#лезем в ноды
                 nodes = node_tree.nodes#и в дерево
+                if node_tree:
+                    output_node = node_tree.nodes.get("Material Output")#нашли общую ноду ##Material Output
+                    principled_node = output_node.inputs[0].links[0].from_node#нашли ноду принциплед
+                    roughness_input = principled_node.inputs[2]#нашли вход roughness
+                    if roughness_input.is_linked == False:
+                        self.report({'ERROR'}, "Roughness input is not connected on material "+cur_obj.data.materials[index].name)#если не подключен roughness
+                        return {'CANCELLED'}
+                    else:
+                        pass
                 if node_tree:
                     # Ищем узел с указанным лейблом чтоб не создовать несколько
                     found_node = None
@@ -901,6 +946,15 @@ class RenderSettNorm(bpy.types.Operator):##Запекание нормала
             for index, material in enumerate(cur_obj.data.materials):
                 node_tree = material.node_tree#лезем в ноды
                 nodes = node_tree.nodes#и в дерево
+                if node_tree:
+                    output_node = node_tree.nodes.get("Material Output")#нашли общую ноду ##Material Output
+                    principled_node = output_node.inputs[0].links[0].from_node#нашли ноду принциплед
+                    n_input = principled_node.inputs[5]#нашли вход normal
+                    if n_input.is_linked == False:
+                        self.report({'ERROR'}, "Normal input is not connected on material "+cur_obj.data.materials[index].name)#если не подключен normal
+                        return {'CANCELLED'}
+                    else:
+                        pass
                 if node_tree:
                     # Ищем узел с указанным лейблом чтоб не создовать несколько
                     found_node = None
@@ -1076,6 +1130,16 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
                 #настройка материала
                 node_tree = material.node_tree#лезем в ноды
                 nodes = node_tree.nodes#и в дерево
+                if node_tree:
+                    output_node = node_tree.nodes.get("Material Output")#нашли общую ноду ##Material Output
+                    principled_node = output_node.inputs[0].links[0].from_node#нашли ноду принциплед
+                    roughness_input = principled_node.inputs[2]#нашли вход roughness
+                    metalic_input = principled_node.inputs.get("Metallic")#нашли вход металик
+                    if roughness_input.is_linked == False or metalic_input.is_linked == False:
+                        self.report({'ERROR'}, "Roughness or Metallic input is not connected on material "+cur_obj.data.materials[index].name)#если не подключен normal
+                        return {'CANCELLED'}
+                    else:
+                        pass
                 if node_tree:
                     # Ищем узел с указанным лейблом чтоб не создовать несколько
                     found_node = None
