@@ -1026,6 +1026,9 @@ class RenderSettNorm(bpy.types.Operator):##Запекание нормала
                             output_node = node_tree.nodes.get("Material Output")#нашли общую ноду ##Material Output
                             principled_node = output_node.inputs[0].links[0].from_node#нашли ноду принциплед
                             if connected_node_n:
+                                principled_node = output_node.inputs[0].links[0].from_node#нашли ноду принциплед
+                                n_input = principled_node.inputs[5]#нашли вход normal
+                                link_n = n_input.links[0]
                                 node_tree.links.remove(link_n)
                             node_tree.links.new(node_normal_object.outputs['Normal'],principled_node.inputs[5])#соединяем с normal
                             break
