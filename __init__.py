@@ -112,7 +112,7 @@ class RenderBC(bpy.types.Operator):#Метод для РЕНДЕРА цвета 
 
 class RenderSettSelfEmi(bpy.types.Operator):##Запекание цвета
     bl_idname = "object.rendersettselfemi"
-    bl_label = "Simple Bake SELF EMISSION"
+    bl_label = "Simple Bake COMBINED"
     
     def execute(self,context):
 
@@ -557,7 +557,7 @@ class RenderSettM(bpy.types.Operator):##Запекание цвета
 
 class RenderSettEmi(bpy.types.Operator):##Запекание емисии
     bl_idname = "object.rendersettemi"
-    bl_label = "Simple Bake Emi"
+    bl_label = "Simple Bake Emission"
     
     def execute(self,context):
 
@@ -1524,12 +1524,13 @@ class OBJECT_PT_CustomPanel(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         if bpy.context.active_object in bpy.context.selected_objects:
-            if(bpy.context.active_object.type != "CAMERA" and bpy.context.active_object.type != "LIGHT" and bpy.context.active_object.type != "ARMATURE" and bpy.context.active_object.type != "EMPTY"):
-                #layout.prop(bpy.data.scenes["Scene"], 'name', text='Разрешение')
+            #if(bpy.context.active_object.type != "CAMERA" and bpy.context.active_object.type != "LIGHT" and bpy.context.active_object.type != "ARMATURE" and bpy.context.active_object.type != "CURVE" and bpy.context.active_object.type != "EMPTY" and bpy.context.active_object.type != "FONT"):
+            if bpy.context.active_object.type == "MESH":
                 row = layout.row()
                 row.prop(context.active_object, 'simple_bake_resolution', text='Resolution', icon='OBJECT_HIDDEN')
                 row = layout.row()
                 row.prop(context.active_object, 'simple_bake_image_name', text="Image name", icon= 'NODE_TEXTURE')
+                row = layout.row()
                 row.prop(context.active_object, 'samples', text="Samples")
                 layout.prop(bpy.context.active_object.data.uv_layers,'active_index',text = "UV Map")
                 layout.operator("object.rendersettsave", icon='COLLECTION_COLOR_01')
