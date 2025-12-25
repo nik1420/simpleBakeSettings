@@ -112,7 +112,7 @@ class RenderBC(bpy.types.Operator):#Метод для РЕНДЕРА цвета 
 
 class RenderSettSelfEmi(bpy.types.Operator):##Запекание цвета
     bl_idname = "object.rendersettselfemi"
-    bl_label = "Simple Bake COMBINED"
+    bl_label = "Bake Combined"
     
     def execute(self,context):
 
@@ -196,7 +196,7 @@ class RenderSettSelfEmi(bpy.types.Operator):##Запекание цвета
 
 class RenderSettBC(bpy.types.Operator):##Запекание цвета
     bl_idname = "object.rendersettbc"
-    bl_label = "Simple Bake BC"
+    bl_label = "Bake Base Color"
     
     def execute(self,context):
 
@@ -351,7 +351,7 @@ class RenderSettBC(bpy.types.Operator):##Запекание цвета
 
 class RenderSettAO(bpy.types.Operator):##Запекание цвета
     bl_idname = "object.rendersettao"
-    bl_label = "Simple Bake AO"
+    bl_label = "Bake AO"
     def execute(self,context):
 
         samples = int(context.active_object.samples)
@@ -453,7 +453,7 @@ class RenderSettAO(bpy.types.Operator):##Запекание цвета
 
 class RenderSettM(bpy.types.Operator):##Запекание цвета
     bl_idname = "object.rendersettm"
-    bl_label = "Simple Bake M"
+    bl_label = "Bake Metallic"
     
     def execute(self,context):
         
@@ -607,7 +607,7 @@ class RenderSettM(bpy.types.Operator):##Запекание цвета
 
 class RenderSettEmi(bpy.types.Operator):##Запекание емисии
     bl_idname = "object.rendersettemi"
-    bl_label = "Simple Bake Emission"
+    bl_label = "Bake Emission"
     
     def execute(self,context):
 
@@ -713,9 +713,9 @@ class RenderSettEmi(bpy.types.Operator):##Запекание емисии
                             node_tree.nodes.remove(found_node1)
         return {'FINISHED'}
 
-class RenderSettOp(bpy.types.Operator):##Запекание емисии
+class RenderSettOp(bpy.types.Operator):##Запекание opacity
     bl_idname = "object.rendersettop"
-    bl_label = "Simple Bake OP(IOR input)"
+    bl_label = "Bake Opacity"
     
     def execute(self,context):
 
@@ -847,7 +847,7 @@ class RenderSettOp(bpy.types.Operator):##Запекание емисии
     
 class RenderSettRough(bpy.types.Operator):##Запекание емисии
     bl_idname = "object.rendersettrough"
-    bl_label = "Simple Bake R"
+    bl_label = "Bake Roughness"
     
     def execute(self,context):
 
@@ -1001,7 +1001,7 @@ class RenderSettRough(bpy.types.Operator):##Запекание емисии
 
 class RenderSettNorm(bpy.types.Operator):##Запекание нормала
     bl_idname = "object.rendersettnorm"
-    bl_label = "Simple Bake N     (DESCRIPTION)"
+    bl_label = "Bake Normal"
     bl_description = "if you want to review baked normal in material after baking select uv that your baking to in normal map node or delete base uv cuz it brokes it"
     
     def execute(self,context):
@@ -1192,7 +1192,7 @@ class RenderEngineEevee(bpy.types.Operator):
 
 class RenderSettRMA(bpy.types.Operator):##Запекание емисии
     bl_idname = "object.rendersettrma"
-    bl_label = "Simple Bake RMAO"
+    bl_label = "Bake RMAO"
     
     def execute(self,context):
 
@@ -1201,7 +1201,6 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
         bake_target_label_uv = bake_target_label_R + "_uv"
         cur_obj = bpy.context.active_object#находим выбранный объект
         cyc_sett = bpy.data.scenes["Scene"].cycles
-        cyc_sett.bake_type = 'ROUGHNESS'
         cyc_sett = context.scene.cycles
         cyc_sett.device = "GPU"
         bpy.data.scenes["Scene"].render.bake.use_selected_to_active = False
@@ -1212,6 +1211,8 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
         bake_resolution = int(context.active_object.simple_bake_resolution)
         found_image = False
         mats_bc = [None] * len(cur_obj.data.materials)
+        mats_op = [None] * len(cur_obj.data.materials)
+        def_op = 1.0#значение по умолчанию opacity
         bake_img_r = None
         for image in bpy.data.images:
             if(image.name == bake_target_label_R):#если картинка уже существовала
@@ -1231,9 +1232,8 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
                     output_node = node_tree.nodes.get("Material Output")#нашли общую ноду ##Material Output
                     principled_node = output_node.inputs[0].links[0].from_node#нашли ноду принциплед
                     roughness_input = principled_node.inputs[2]#нашли вход roughness
-                    metalic_input = principled_node.inputs.get("Metallic")#нашли вход металик
-                    if roughness_input.is_linked == False or metalic_input.is_linked == False:
-                        self.report({'ERROR'}, "Roughness or Metallic input is not connected on material "+cur_obj.data.materials[index].name)#если не подключен normal
+                    if roughness_input.is_linked == False:
+                        self.report({'ERROR'}, "Roughness input is not connected on material "+cur_obj.data.materials[index].name)#если не подключен roughness
                         return {'CANCELLED'}
                     else:
                         pass
@@ -1255,15 +1255,18 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
                             principled_node = output_node.inputs[0].links[0].from_node#нашли ноду принциплед
                             roughness_input = principled_node.inputs[2]#нашли вход roughness
                             emission_input = principled_node.inputs[27]#нашли вход Emission
-                            emission_str = principled_node.inputs[28]
+                            opacity_input = principled_node.inputs[4]#нашли вход opacity-------------------------------------------------------
+                            emission_str = principled_node.inputs[28]#нашли вход Emission strength
                             def_emi_str = emission_str.default_value#сохранили стандартную эмиссию
-                            emission_str_val = 1.0
+                            emission_str_val = 1.0#значение силы емиссии
                             connected_node_roughness= None#ищем подключенную ноду к металику
                             connected_socket_roughness = None#ищем ее название
-                            emission_str.default_value = emission_str_val
+                            emission_str.default_value = emission_str_val#назначение силы эмиссии
+                            
                             if emission_input.is_linked:#если есть какоенибудь соединение
                                 link = emission_input.links[0]  # Берём первое соединение
                                 mats_bc[index] = ( link.from_node, link.from_socket.name )
+                            
                             if roughness_input.is_linked:#если есть какоенибудь соединение
                                 link = roughness_input.links[0]  # Берём первое соединение
                                 connected_node_roughness = link.from_node  # Нода, откуда идёт связь
@@ -1271,8 +1274,19 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
                             else:
                                 self.report({'ERROR'}, "Roughness input is not connected on material "+cur_obj.data.materials[index].name)#если не подключен roughness
                                 return {'CANCELLED'}
+                            
+                            if opacity_input.is_linked:#если есть какоенибудь соединение c opacity
+                                link = opacity_input.links[0]  # Берём первое соединение
+                                mats_op[index] = ( link.from_node, link.from_socket.name )
+                                node_tree.links.remove(link) #удаляем то что в opacity идет
+                                opacity_input.default_value = 1.0 #ставим опакити в 1 чтоб не было прозрачности при запекании
+                            else:
+                                def_op = opacity_input.default_value #запоминаем старый opacity
+                                opacity_input.default_value = 1.0 #ставим опакити в 1 чтоб не было прозрачности при запекании
+                            
                             if connected_node_roughness:#если существует подключенная нода
                                 node_tree.links.new(connected_node_roughness.outputs[connected_socket_roughness],principled_node.inputs[27])#соединяем с emission color
+                                
 
                             texture_image_my = nodes.new(type="ShaderNodeTexImage")#создаем  ноду картинки
                             texture_image_my.label = bake_target_label_R
@@ -1297,7 +1311,12 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
                     principled_node = output_node.inputs[0].links[0].from_node#нашли ноду принциплед
                     emission_input_input = principled_node.inputs[27]#нашли вход emission
                     emission_str = principled_node.inputs[28]
-                    emission_str.default_value = def_emi_str#возвращаем стандартную эмиссию
+                    opacity_input = principled_node.inputs[4]#нашли вход opacity-------------------------------------------------------
+                    emission_str.default_value = def_emi_str
+                    if mats_op[index]:#если был запомнен opacity
+                        node_tree.links.new(mats_op[index][0].outputs[mats_op[index][1]],principled_node.inputs[4])#соединяем с opacity
+                    else:
+                        opacity_input.default_value = def_op#возвращаем старый opacity
                     if emission_input_input.is_linked:#если есть какоенибудь соединение
                             link = emission_input_input.links[0]  # Берём первое соединение
                             node_tree.links.remove(link)
@@ -1323,7 +1342,7 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
                         if node.label == bake_target_label_uv:
                             found_node1 = node
                             node_tree.nodes.remove(found_node1) 
-
+        
         samples = int(context.active_object.samples)
         bake_target_label_m = context.active_object.simple_bake_image_name + '_M'
         bake_target_label_uv = bake_target_label_m + "_uv"
@@ -1345,6 +1364,8 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
         bake_resolution = int(context.active_object.simple_bake_resolution)
         found_image = False
         mats_bc = [None] * len(cur_obj.data.materials)
+        mats_op = [None] * len(cur_obj.data.materials)
+        def_op = 1.0#значение по умолчанию opacity
         for image in bpy.data.images:
             if(image.name == bake_target_label_m):#если картинка уже существовала
                 img = bpy.data.images.get(bake_target_label_m)
@@ -1359,6 +1380,23 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
                 #настройка материала
                 node_tree = material.node_tree#лезем в ноды
                 nodes = node_tree.nodes#и в дерево
+                if node_tree:
+                    output_node = node_tree.nodes.get("Material Output")#нашли общую ноду ##Material Output
+                    principled_node = output_node.inputs[0].links[0].from_node#нашли ноду принциплед
+                    opacity_input = principled_node.inputs[4]#нашли вход opacity-------------------------------------------------------
+                    metalic_input = principled_node.inputs.get("Metallic")#нашли вход металик
+                    if metalic_input.is_linked == False:
+                        self.report({'ERROR'}, "Metallic input is not connected on material "+cur_obj.data.materials[index].name)#если не подключен металик
+                        return {'CANCELLED'}
+                    else:
+                        if opacity_input.is_linked:#если есть какоенибудь соединение c opacity
+                            link = opacity_input.links[0]  # Берём первое соединение
+                            mats_op[index] = ( link.from_node, link.from_socket.name )
+                            node_tree.links.remove(link) #удаляем то что в opacity идет
+                            opacity_input.default_value = 1.0 #ставим опакити в 1 чтоб не было прозрачности при запекании
+                        else:
+                            def_op = opacity_input.default_value #запоминаем старый opacity
+                            opacity_input.default_value = 1.0 #ставим опакити в 1 чтоб не было прозрачности при запекании
                 if node_tree:
                     # Ищем узел с указанным лейблом чтоб не создовать несколько
                     found_node = None
@@ -1377,7 +1415,7 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
                             principled_node = output_node.inputs[0].links[0].from_node#нашли ноду принциплед
                             metalic_input = principled_node.inputs.get("Metallic")#нашли вход металик
                             emission_input = principled_node.inputs[27]#нашли вход Emission
-                            emission_str = principled_node.inputs[28]
+                            emission_str = principled_node.inputs[28]#нашли вход Emission strength
                             def_emi_str = emission_str.default_value#сохранили стандартную эмиссию
                             emission_str_val = 1.0
                             connected_node_metalic= None#ищем подключенную ноду к металику
@@ -1419,7 +1457,12 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
                     principled_node = output_node.inputs[0].links[0].from_node#нашли ноду принциплед
                     emission_input_input = principled_node.inputs[27]#нашли вход emission
                     emission_str = principled_node.inputs[28]
-                    emission_str.default_value = def_emi_str#возвращаем стандартную эмиссию
+                    emission_str.default_value = def_emi_str#возвращаем силу емиссии
+                    opacity_input = principled_node.inputs[4]#нашли вход opacity---------------------
+                    if mats_op[index]:#если был запомнен opacity
+                        node_tree.links.new(mats_op[index][0].outputs[mats_op[index][1]],principled_node.inputs[4])#соединяем с opacity
+                    else:
+                        opacity_input.default_value = def_op#возвращаем старый opacity
                     if emission_input_input.is_linked:#если есть какоенибудь соединение
                             link = emission_input_input.links[0]  # Берём первое соединение
                             node_tree.links.remove(link)
@@ -1444,22 +1487,24 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
                     for node in node_tree.nodes:
                         if node.label == bake_target_label_uv:
                             found_node1 = node
-                            node_tree.nodes.remove(found_node1)
-
+                            node_tree.nodes.remove(found_node1)   
+        samples = int(context.active_object.samples)
         bake_target_label_ao = context.active_object.simple_bake_image_name + '_AO'
         bake_target_label_uv = bake_target_label_ao + "_uv"
         cur_obj = context.active_object#находим выбранный объект
         #выставление настроек рендера
         cyc_sett = context.scene.cycles
         cyc_sett.device = "GPU"
-        bpy.data.scenes["Scene"].render.bake.use_selected_to_active = False
         cyc_sett.use_adaptive_sampling = False
         cyc_sett.use_denoising = False
+        cyc_sett.samples = samples
+        bpy.data.scenes["Scene"].render.bake.use_selected_to_active = False
         cyc_sett.bake_type = 'AO'
         context.scene.render.engine = 'CYCLES'
         bake_resolution = int(context.active_object.simple_bake_resolution)
+        mats_op = [None] * len(cur_obj.data.materials)
+        def_op = 1.0#значение по умолчанию opacity
         found_image = False
-        bake_img_ao = None
         for image in bpy.data.images:
             if(image.name == bake_target_label_ao):#если картинка уже существовала
                     img = bpy.data.images.get(bake_target_label_ao)
@@ -1467,7 +1512,7 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
                     found_image = False
                     break
         if(found_image == False):
-            bake_img_ao = bpy.ops.image.new(name = bake_target_label_ao,width=bake_resolution,height=bake_resolution,float = True)#создаем картинку
+            bake_img = bpy.ops.image.new(name = bake_target_label_ao,width=bake_resolution,height=bake_resolution,float = True)#создаем картинку
             bpy.data.images[bake_target_label_ao].colorspace_settings.name = "Non-Color"#назначаем нужный цветовой профиль
         if(len(cur_obj.data.materials)>0):#если есть материал
             for index, material in enumerate(cur_obj.data.materials):
@@ -1487,6 +1532,9 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
                             found_node1.uv_map = cur_obj.data.uv_layers.active.name
                             break
                         else:
+                            output_node = node_tree.nodes.get("Material Output")#нашли общую ноду ##Material Output
+                            principled_node = output_node.inputs[0].links[0].from_node#нашли ноду принциплед
+                            opacity_input = principled_node.inputs[4]#нашли вход opacity------
                             texture_image_my = nodes.new(type="ShaderNodeTexImage")#создаем  ноду картинки
                             texture_image_my.label = bake_target_label_ao
                             uv_map_node  = nodes.new(type="ShaderNodeUVMap")#создаем ноду юв
@@ -1495,6 +1543,14 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
                             node_tree.links.new(uv_map_node.outputs['UV'],texture_image_my.inputs['Vector'])#соединяем юв и картинку
                             node_tree.nodes.active = texture_image_my#делаем активной
                             node_tree.nodes.active.image = bpy.data.images[bake_target_label_ao]#ставим в выбранную картинку
+                            if opacity_input.is_linked:#если есть какоенибудь соединение c opacity
+                                link = opacity_input.links[0]  # Берём первое соединение
+                                mats_op[index] = ( link.from_node, link.from_socket.name )
+                                node_tree.links.remove(link) #удаляем то что в opacity идет
+                                opacity_input.default_value = 1.0 #ставим опакити в 1 чтоб не было прозрачности при запекании
+                            else:
+                                def_op = opacity_input.default_value #запоминаем старый opacity
+                                opacity_input.default_value = 1.0 #ставим опакити в 1 чтоб не было прозрачности при запекании
                             break
         context.scene.render.bake.use_selected_to_active = False#отключаем запекание с активного на выбранный
         bpy.ops.object.bake(type="AO",use_clear= True) 
@@ -1507,6 +1563,13 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
                 nodes = node_tree.nodes#и в дерево
                 if node_tree:
                     # Ищем узел с указанным лейблом чтоб не создовать несколько
+                    output_node = node_tree.nodes.get("Material Output")#нашли общую ноду ##Material Output
+                    principled_node = output_node.inputs[0].links[0].from_node#нашли ноду принциплед
+                    opacity_input = principled_node.inputs[4]#нашли вход opacity-----------
+                    if mats_op[index]:#если был запомнен opacity
+                        node_tree.links.new(mats_op[index][0].outputs[mats_op[index][1]],principled_node.inputs[4])#соединяем с opacity
+                    else:
+                        opacity_input.default_value = def_op#возвращаем старый opacity
                     found_node = None
                     found_node1 = None
                     for node in node_tree.nodes:
@@ -1517,15 +1580,22 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
                     for node in node_tree.nodes:
                         if node.label == bake_target_label_uv:
                             found_node1 = node
-                            node_tree.nodes.remove(found_node1)   
-
+                            node_tree.nodes.remove(found_node1)
+                                       
         return {'FINISHED'}
 
 class CombineIMG(bpy.types.Operator):
     bl_idname = "object.combinator"
     bl_label = "Combine RMAO"
     def execute(self, context):
-
+        a = 0
+        for images in bpy.data.images:
+            print(images.name)
+            if images.name == bpy.types.Scene.r_name or images.name == bpy.types.Scene.m_name or images.name == bpy.types.Scene.ao_name:
+                a += 1
+        if a < 3:
+            self.report({'ERROR'}, "One or more images not found.")
+            return {'CANCELLED'}
         image_paths_local = {
     "R":bpy.types.Scene.r_name,  # Красный канал
     "G":bpy.types.Scene.m_name,  # Зелёный канал
@@ -1563,7 +1633,14 @@ class CombineIMGop(bpy.types.Operator):
     bl_idname = "object.combinatorop"
     bl_label = "Combine RMAOP"
     def execute(self, context):
-
+        a = 0
+        for images in bpy.data.images:
+            print(images.name)
+            if images.name == bpy.types.Scene.r_name or images.name == bpy.types.Scene.m_name or images.name == bpy.types.Scene.ao_name:
+                a += 1
+        if a < 3:
+            self.report({'ERROR'}, "One or more images not found.")
+            return {'CANCELLED'}
         image_paths_local = {
     "R":bpy.types.Scene.r_name,  # Красный канал
     "G":bpy.types.Scene.m_name,  # Зелёный канал
