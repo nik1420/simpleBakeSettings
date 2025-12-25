@@ -170,6 +170,7 @@ class RenderSettSelfEmi(bpy.types.Operator):##Запекание цвета
                             node_tree.nodes.active = texture_image_my#делаем активной
                             node_tree.nodes.active.image = bpy.data.images[bake_target_label]#ставим в выбранную картинку
                             break
+        context.scene.render.bake.use_selected_to_active = False#отключаем запекание с активного на выбранный
         bpy.ops.object.bake(type="COMBINED",use_clear= True) 
 ########удаление использованного из материала
         if(len(cur_obj.data.materials)>0):#если есть материал
@@ -289,6 +290,7 @@ class RenderSettBC(bpy.types.Operator):##Запекание цвета
                             node_tree.nodes.active = texture_image_my#делаем активной
                             node_tree.nodes.active.image = bpy.data.images[bake_target_label_BC]#ставим в выбранную картинку
                             break
+        context.scene.render.bake.use_selected_to_active = False#отключаем запекание с активного на выбранный
         bpy.ops.object.bake(type="EMIT",use_clear= True) 
         ############################################################################################Вертаем взад
         if(len(cur_obj.data.materials)>0):#если есть материал
@@ -388,6 +390,7 @@ class RenderSettAO(bpy.types.Operator):##Запекание цвета
                             node_tree.nodes.active = texture_image_my#делаем активной
                             node_tree.nodes.active.image = bpy.data.images[bake_target_label_ao]#ставим в выбранную картинку
                             break
+        context.scene.render.bake.use_selected_to_active = False#отключаем запекание с активного на выбранный
         bpy.ops.object.bake(type="AO",use_clear= True) 
         bpy.types.Scene.ao_name = bake_target_label_ao
 ########удаление использованного из материала
@@ -509,6 +512,7 @@ class RenderSettM(bpy.types.Operator):##Запекание цвета
                             node_tree.nodes.active = texture_image_my#делаем активной
                             node_tree.nodes.active.image = bpy.data.images[bake_target_label_m]#ставим в выбранную картинку
                             break
+        context.scene.render.bake.use_selected_to_active = False#отключаем запекание с активного на выбранный
         bpy.ops.object.bake(type="EMIT",use_clear= True) 
         bpy.types.Scene.m_name = bake_target_label_m
         ############################################################################################Вертаем взад
@@ -619,6 +623,7 @@ class RenderSettEmi(bpy.types.Operator):##Запекание емисии
                             node_tree.nodes.active = texture_image_my#делаем активной
                             node_tree.nodes.active.image = bpy.data.images[bake_target_label]#ставим в выбранную картинку    
                             break
+        context.scene.render.bake.use_selected_to_active = False#отключаем запекание с активного на выбранный
         bpy.ops.object.bake(type="EMIT",use_clear= True) 
         ########удаление использованного из материала
         if(len(cur_obj.data.materials)>0):#если есть материал
@@ -735,6 +740,7 @@ class RenderSettOp(bpy.types.Operator):##Запекание емисии
                             node_tree.nodes.active = texture_image_my#делаем активной
                             node_tree.nodes.active.image = bpy.data.images[bake_target_label_op]#ставим в выбранную картинку
                             break
+        context.scene.render.bake.use_selected_to_active = False#отключаем запекание с активного на выбранный
         bpy.ops.object.bake(type="DIFFUSE",use_clear= True) 
         bpy.types.Scene.op_name = bake_target_label_op
         ############################################################################################Вертаем взад
@@ -866,6 +872,7 @@ class RenderSettRough(bpy.types.Operator):##Запекание емисии
                             node_tree.nodes.active = texture_image_my#делаем активной
                             node_tree.nodes.active.image = bpy.data.images[bake_target_label_R]#ставим в выбранную картинку
                             break
+        context.scene.render.bake.use_selected_to_active = False#отключаем запекание с активного на выбранный
         bpy.ops.object.bake(type="EMIT",use_clear= True) 
         bpy.types.Scene.r_name = bake_target_label_R
         ############################################################################################Вертаем взад
@@ -1011,6 +1018,7 @@ class RenderSettNorm(bpy.types.Operator):##Запекание нормала
                             node_tree.nodes.active = texture_image_my#делаем активной основную для запекания обджект спейса
                             node_tree.nodes.active.image = bpy.data.images[bake_target_label_N]#ставим в выбранную картинку    
                             break
+        context.scene.render.bake.use_selected_to_active = False#отключаем запекание с активного на выбранный
         bpy.ops.object.bake(type="NORMAL",use_clear= True) 
         if(len(cur_obj.data.materials)>0):#если есть материал
             for index, material in enumerate(cur_obj.data.materials):
@@ -1033,6 +1041,7 @@ class RenderSettNorm(bpy.types.Operator):##Запекание нормала
                             node_tree.links.new(node_normal_object.outputs['Normal'],principled_node.inputs[5])#соединяем с normal
                             break
         bpy.data.scenes["Scene"].render.bake.normal_space = 'TANGENT'#возвращаем тангенс спейс обратно
+        context.scene.render.bake.use_selected_to_active = False#отключаем запекание с активного на выбранный
         bpy.ops.object.bake(type="NORMAL",use_clear= False)#второй проход запекания в тангенс спейсе
         ########удаление использованного из материала
         if(len(cur_obj.data.materials)>0):#если есть материал
@@ -1189,6 +1198,7 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
                             node_tree.nodes.active = texture_image_my#делаем активной
                             node_tree.nodes.active.image = bpy.data.images[bake_target_label_R]#ставим в выбранную картинку
                             break
+        context.scene.render.bake.use_selected_to_active = False#отключаем запекание с активного на выбранный
         bpy.ops.object.bake(type="EMIT",use_clear= True) 
         bpy.types.Scene.r_name = bake_target_label_R
         ############################################################################################Вертаем взад
@@ -1310,6 +1320,7 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
                             node_tree.nodes.active = texture_image_my#делаем активной
                             node_tree.nodes.active.image = bpy.data.images[bake_target_label_m]#ставим в выбранную картинку
                             break
+        context.scene.render.bake.use_selected_to_active = False#отключаем запекание с активного на выбранный
         bpy.ops.object.bake(type="EMIT",use_clear= True) 
         bpy.types.Scene.m_name = bake_target_label_m
         ############################################################################################Вертаем взад
@@ -1400,6 +1411,7 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
                             node_tree.nodes.active = texture_image_my#делаем активной
                             node_tree.nodes.active.image = bpy.data.images[bake_target_label_ao]#ставим в выбранную картинку
                             break
+        context.scene.render.bake.use_selected_to_active = False#отключаем запекание с активного на выбранный
         bpy.ops.object.bake(type="AO",use_clear= True) 
         bpy.types.Scene.ao_name = bake_target_label_ao
 ########удаление использованного из материала
