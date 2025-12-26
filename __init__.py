@@ -1685,9 +1685,15 @@ class OBJECT_PT_CustomPanel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
+        cur_obj_all = context.selected_objects#находим все выбранные объекты
+        a = 0
+        for obj in cur_obj_all:
+            #print(obj.type)
+            if obj.type != 'MESH':
+                a =+ 1
+        print(a)
         if bpy.context.active_object in bpy.context.selected_objects:
-            #if(bpy.context.active_object.type != "CAMERA" and bpy.context.active_object.type != "LIGHT" and bpy.context.active_object.type != "ARMATURE" and bpy.context.active_object.type != "CURVE" and bpy.context.active_object.type != "EMPTY" and bpy.context.active_object.type != "FONT"):
-            if bpy.context.active_object.type == "MESH":
+            if a <1 :
                 row = layout.row()
                 row.prop(context.active_object, 'simple_bake_resolution', text='Resolution', icon='OBJECT_HIDDEN')
                 row = layout.row()
