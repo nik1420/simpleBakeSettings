@@ -1687,44 +1687,44 @@ class OBJECT_PT_CustomPanel(bpy.types.Panel):
         layout = self.layout
         cur_obj_all = context.selected_objects#находим все выбранные объекты
         a = 0
-        for obj in cur_obj_all:
-            #print(obj.type)
-            if obj.type != 'MESH':
-                a =+ 1
-        print(a)
-        if bpy.context.active_object in bpy.context.selected_objects:
-            if a <1 :
+        if context.active_object.mode == 'OBJECT':
+            for obj in cur_obj_all:
+                if obj.type != 'MESH':
+                    a =+ 1
+            print(a)
+            if bpy.context.active_object in bpy.context.selected_objects:
+                if a <1 :
+                    row = layout.row()
+                    row.prop(context.active_object, 'simple_bake_resolution', text='Resolution', icon='OBJECT_HIDDEN')
+                    row = layout.row()
+                    row.prop(context.active_object, 'simple_bake_image_name', text="Image name", icon= 'NODE_TEXTURE')
+                    row = layout.row()
+                    row.prop(context.active_object, 'samples', text="Samples")
+                    layout.prop(bpy.context.active_object.data.uv_layers,'active_index',text = "UV Map")
+                    layout.operator("object.rendersettsave", icon='COLLECTION_COLOR_01')
+                    layout.operator("object.rendersettselfemi", icon='RESTRICT_RENDER_OFF')
+                    layout.operator("object.rendersettbc", icon='RESTRICT_RENDER_OFF')
+                    layout.operator("object.rendersettemi", icon='RESTRICT_RENDER_OFF')
+                    layout.operator("object.rendersettnorm", icon='RESTRICT_RENDER_OFF')
+                    layout.operator("object.rendersettm", icon='RESTRICT_RENDER_OFF')
+                    layout.operator("object.rendersettrough", icon='RESTRICT_RENDER_OFF')
+                    layout.operator("object.rendersettop", icon='RESTRICT_RENDER_OFF')
+                    layout.operator("object.rendersettao", icon='RESTRICT_RENDER_OFF')
+                    layout.operator("object.rendersettrma", icon='RESTRICT_RENDER_OFF')
+                    layout.operator("object.combinator", icon='RESTRICT_RENDER_OFF')
+                    layout.operator("object.combinatorop", icon='RESTRICT_RENDER_OFF')
+                    #layout.prop(context.active_object, 'image_to_separate', text="Img_Name")
+                    #layout.operator("object.separator", icon='RESTRICT_RENDER_OFF')
+                    layout.split(factor=0.1)
+                    box = layout.box()
+                    row = box.row()
+                    row.prop(context.active_object, 'simple_bake_image_res', text="Render Resolution")
+                    box.operator("object.renderbc")
+                    box.operator("object.re_cycles")
+                    box.operator("object.re_eevee")
+            else:
                 row = layout.row()
-                row.prop(context.active_object, 'simple_bake_resolution', text='Resolution', icon='OBJECT_HIDDEN')
-                row = layout.row()
-                row.prop(context.active_object, 'simple_bake_image_name', text="Image name", icon= 'NODE_TEXTURE')
-                row = layout.row()
-                row.prop(context.active_object, 'samples', text="Samples")
-                layout.prop(bpy.context.active_object.data.uv_layers,'active_index',text = "UV Map")
-                layout.operator("object.rendersettsave", icon='COLLECTION_COLOR_01')
-                layout.operator("object.rendersettselfemi", icon='RESTRICT_RENDER_OFF')
-                layout.operator("object.rendersettbc", icon='RESTRICT_RENDER_OFF')
-                layout.operator("object.rendersettemi", icon='RESTRICT_RENDER_OFF')
-                layout.operator("object.rendersettnorm", icon='RESTRICT_RENDER_OFF')
-                layout.operator("object.rendersettm", icon='RESTRICT_RENDER_OFF')
-                layout.operator("object.rendersettrough", icon='RESTRICT_RENDER_OFF')
-                layout.operator("object.rendersettop", icon='RESTRICT_RENDER_OFF')
-                layout.operator("object.rendersettao", icon='RESTRICT_RENDER_OFF')
-                layout.operator("object.rendersettrma", icon='RESTRICT_RENDER_OFF')
-                layout.operator("object.combinator", icon='RESTRICT_RENDER_OFF')
-                layout.operator("object.combinatorop", icon='RESTRICT_RENDER_OFF')
-                #layout.prop(context.active_object, 'image_to_separate', text="Img_Name")
-                #layout.operator("object.separator", icon='RESTRICT_RENDER_OFF')
-                layout.split(factor=0.1)
-                box = layout.box()
-                row = box.row()
-                row.prop(context.active_object, 'simple_bake_image_res', text="Render Resolution")
-                box.operator("object.renderbc")
-                box.operator("object.re_cycles")
-                box.operator("object.re_eevee")
-        else:
-            row = layout.row()
-            row.label(text = "No object selected")
+                row.label(text = "No object selected")
 
 # Регистрация классов
 def register():
