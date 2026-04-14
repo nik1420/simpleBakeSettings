@@ -1676,12 +1676,12 @@ class CombineIMGop(bpy.types.Operator):
         return {'FINISHED'}
 
 # Панель для добавления кнопки
-class OBJECT_PT_CustomPanel(bpy.types.Panel):
+class OBJECT_PT_CustomPanelBakeSettings(bpy.types.Panel):
     bl_label = "Set Render Settings For Bake"
-    bl_idname = "OBJECT_PT_custom_panel"
+    bl_idname = "OBJECT_PT_custom_panel_bake_settings"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = 'Tool'  # Категория панели в N-сайдбаре
+    bl_category = 'Customs'  # Категория панели в N-сайдбаре
 
     def draw(self, context):
         layout = self.layout
@@ -1692,7 +1692,6 @@ class OBJECT_PT_CustomPanel(bpy.types.Panel):
                 for obj in cur_obj_all:
                     if obj.type != 'MESH':
                         a =+ 1
-                print(a)
                 if bpy.context.active_object in bpy.context.selected_objects:
                     if a <1 :
                         row = layout.row()
@@ -1723,9 +1722,11 @@ class OBJECT_PT_CustomPanel(bpy.types.Panel):
                         box.operator("object.renderbc")
                         box.operator("object.re_cycles")
                         box.operator("object.re_eevee")
-                else:
-                    row = layout.row()
-                    row.label(text = "No object selected")
+        else:
+            row = layout.row()
+            box = row.box()
+            box.alignment = 'CENTER'
+            box.label(text = "No object selected")
 
 # Регистрация классов
 def register():
@@ -1742,7 +1743,7 @@ def register():
     bpy.utils.register_class(RenderSettRMA)
     bpy.utils.register_class(CombineIMG)
     bpy.utils.register_class(CombineIMGop)
-    bpy.utils.register_class(OBJECT_PT_CustomPanel)
+    bpy.utils.register_class(OBJECT_PT_CustomPanelBakeSettings)
     bpy.utils.register_class(RenderBC)
     bpy.utils.register_class(RenderEngineCycles)
     bpy.utils.register_class(RenderEngineEevee)
@@ -1764,7 +1765,7 @@ def unregister():
     bpy.utils.unregister_class(RenderSettRMA)
     bpy.utils.unregister_class(CombineIMG)
     bpy.utils.unregister_class(CombineIMGop)
-    bpy.utils.unregister_class(OBJECT_PT_CustomPanel)
+    bpy.utils.unregister_class(OBJECT_PT_CustomPanelBakeSettings)
     bpy.utils.unregister_class(RenderBC)
     bpy.utils.unregister_class(RenderEngineCycles)
     bpy.utils.unregister_class(RenderEngineEevee)
