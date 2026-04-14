@@ -1682,6 +1682,7 @@ class OBJECT_PT_CustomPanelBakeSettings(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = 'Customs'  # Категория панели в N-сайдбаре
+    bl_order = 2
 
     def draw(self, context):
         layout = self.layout
