@@ -910,11 +910,11 @@ class RenderSettOp(bpy.types.Operator):##Запекание opacity
                     output_node = node_tree.nodes.get("Material Output")#нашли общую ноду ##Material Output
                     principled_node = output_node.inputs[0].links[0].from_node#нашли ноду принциплед
                     opacity_input = principled_node.inputs[4]#нашли вход opacity-------
-                    if opacity_input.is_linked == False:
-                        self.report({'ERROR'}, "Opacity input is not connected on material "+cur_obj.data.materials[index].name)#если не подключен ior
-                        return {'CANCELLED'}
-                    else:
-                        pass
+                    # if opacity_input.is_linked == False:
+                    #     self.report({'ERROR'}, "Opacity input is not connected on material "+cur_obj.data.materials[index].name)#если не подключен ior
+                    #     return {'CANCELLED'}
+                    # else:
+                    #     pass
                 if node_tree:
                     # Ищем узел с указанным лейблом чтоб не создовать несколько
                     found_node = None
@@ -933,6 +933,7 @@ class RenderSettOp(bpy.types.Operator):##Запекание opacity
                             principled_node = output_node.inputs[0].links[0].from_node#нашли ноду принциплед
                             opacity_input = principled_node.inputs[4]#нашли вход opacity-------
                             emission_input = principled_node.inputs[30]#нашли вход Emission
+                            def_emi_val = tuple(emission_input.default_value)  # Сохраняем стандартное значение цвета эмиссии
                             def_emi_str = principled_node.inputs[31].default_value#сохранили стандартную эмиссию
                             connected_node_op= None#ищем подключенную ноду к opacity
                             connected_socket_op = None#ищем ее название
@@ -943,12 +944,13 @@ class RenderSettOp(bpy.types.Operator):##Запекание opacity
                                 link = opacity_input.links[0]  # Берём первое соединение
                                 connected_node_op = link.from_node  # Нода, откуда идёт связь
                                 connected_socket_op = link.from_socket.name  # имя, откуда идёт связь
-                            else:
-                                self.report({'ERROR'}, "Opacity input is not connected on material "+cur_obj.data.materials[index].name)#если не подключен op
-                                return {'CANCELLED'}
                             if connected_node_op:#если существует подключенная нода
                                 principled_node.inputs[31].default_value = 1.0#ставим силу емиссии в 1
                                 node_tree.links.new(connected_node_op.outputs[connected_socket_op],principled_node.inputs[30])#соединяем с emit
+                            else:
+                                opacity_value = opacity_input.default_value
+                                principled_node.inputs[30].default_value = [opacity_value,opacity_value,opacity_value,1.0]
+                                principled_node.inputs[31].default_value = 1.0
 
                             texture_image_my = nodes.new(type="ShaderNodeTexImage")#создаем  ноду картинки
                             texture_image_my.label = bake_target_label_op
@@ -971,13 +973,16 @@ class RenderSettOp(bpy.types.Operator):##Запекание opacity
                 if node_tree:
                     output_node = node_tree.nodes.get("Material Output")#нашли общую ноду ##Material Output
                     principled_node = output_node.inputs[0].links[0].from_node#нашли ноду принциплед
-                    emi_input = principled_node.inputs[30]#нашли вход bc
+                    emi_input = principled_node.inputs[30]#нашли вход emission
                     if emi_input.is_linked:#если есть какоенибудь соединение
                             link = emi_input.links[0]  # Берём первое соединение
                             node_tree.links.remove(link)
                             if mats_emi[index]:#соединяем с тем emi что был до запекания
                                 principled_node.inputs[31].default_value = def_emi_str#возвращаем силу емиссии
                                 node_tree.links.new(mats_emi[index][0].outputs[mats_emi[index][1]],principled_node.inputs[30])#соединяем с emit
+                    if not emi_input.is_linked:
+                        principled_node.inputs[30].default_value = def_emi_val
+                        principled_node.inputs[31].default_value = def_emi_str
 ########удаление использованного из материала
         if(len(cur_obj.data.materials)>0):#если есть материал
             for index, material in enumerate(cur_obj.data.materials):
