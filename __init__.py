@@ -13,10 +13,6 @@ bpy.types.Scene.r_name = bpy.props.StringProperty(
     name="r_name",
     default=""
 )
-# bpy.types.Scene.bc_name = bpy.props.StringProperty(
-#     name="bc_name",
-#     default=""
-# )
 bpy.types.Scene.m_name = bpy.props.StringProperty(
     name="m_name",
     default=""
@@ -26,7 +22,7 @@ bpy.types.Scene.ao_name = bpy.props.StringProperty(
     default=""
 )
 
-class RenderSettSave(bpy.types.Operator):##Запекание емисии
+class RenderSettSave(bpy.types.Operator):##Сохранение перед запеканием
     bl_idname = "object.rendersettsave"
     bl_label = "SAVE BEFORE BAKE!"
     
@@ -39,23 +35,23 @@ class RenderSettSave(bpy.types.Operator):##Запекание емисии
         self.report({'WARNING'}, "File saved!")
         return {'FINISHED'}
     
-class RenderBC(bpy.types.Operator):#Метод для РЕНДЕРА цвета на плоскости
+class RenderBC(bpy.types.Operator):#Метод для РЕНДЕРА цвета на плоскости евой
     bl_idname = "object.renderbc"
     bl_label = "Simple RENDER BC/N"
 
     def execute(self, context):
-
-        rend_res_val = context.active_object.simple_bake_image_res
-        context.scene.render.resolution_y= int(rend_res_val)
-        context.scene.render.resolution_x= int(rend_res_val)
+        bpy.ops.object.rendersettsave()
+        render_resolution = context.active_object.bake_image_resolution_eve
+        context.scene.render.resolution_y= int(render_resolution)
+        context.scene.render.resolution_x= int(render_resolution)
         if(context.scene.camera):#проверяем была ли уже камера на сцене
             old_cam = context.scene.camera
         else:
             old_cam = None
-        mat = context.active_object.active_material#забираем материал с выбранного объекта
+        current_material = context.active_object.active_material#забираем материал с выбранного объекта
         bpy.ops.mesh.primitive_plane_add(location=[0,0,-12])#создаем плейн OFFSET FOR RENDER PLANE
         plane_obj = context.object
-        context.active_object.data.materials.append(mat)
+        context.active_object.data.materials.append(current_material)
         bpy.ops.object.camera_add(location=[0,0,-9.2222],rotation=[0,0,0])#создаем камеру OFFSET FOR RENDER CAMERA
         camera_obj = context.object
 
@@ -121,7 +117,7 @@ class RenderSettSelfEmi(bpy.types.Operator):##Запекание цвета
     def execute(self,context):
 
         samples = int(context.active_object.samples)
-        bake_target_label = context.active_object.simple_bake_image_name
+        bake_target_label = context.active_object.bake_image_name
         bake_target_label_uv = bake_target_label + "_uv"
         cur_obj = context.active_object#находим выбранный объект
         #выставление настроек рендера
@@ -136,7 +132,7 @@ class RenderSettSelfEmi(bpy.types.Operator):##Запекание цвета
         context.scene.render.bake.use_pass_direct = True
         context.scene.render.bake.use_pass_indirect = True
         context.scene.render.bake.use_pass_color = True
-        bake_resolution = int(context.active_object.simple_bake_resolution)
+        bake_resolution = int(context.active_object.bake_resolution_cycles)
         found_image = False
         for image in bpy.data.images:
             if(image.name == bake_target_label):#если картинка уже существовала
@@ -205,7 +201,7 @@ class RenderSettBC(bpy.types.Operator):##Запекание цвета
     def execute(self,context):
 
         samples = int(context.active_object.samples)
-        bake_target_label_BC = context.active_object.simple_bake_image_name + '_bc'
+        bake_target_label_BC = context.active_object.bake_image_name + '_bc'
         bake_target_label_uv = bake_target_label_BC + "_uv"
         cur_obj = context.active_object#находим выбранный объект
         #выставление настроек рендера
@@ -222,7 +218,7 @@ class RenderSettBC(bpy.types.Operator):##Запекание цвета
         context.scene.render.bake.use_pass_color = True
         node_tree = None
         principled_node = None
-        bake_resolution = int(context.active_object.simple_bake_resolution)
+        bake_resolution = int(context.active_object.bake_resolution_cycles)
         found_image = False
         mats_bc = [None] * len(cur_obj.data.materials)
         mats_op = [None] * len(cur_obj.data.materials)
@@ -358,7 +354,7 @@ class RenderSettBC(bpy.types.Operator):##Запекание цвета
 #     def execute(self,context):
 
 #         samples = int(context.active_object.samples)
-#         bake_target_label_BC = context.active_object.simple_bake_image_name + '_bc'
+#         bake_target_label_BC = context.active_object.bake_image_name + '_bc'
 #         bake_target_label_uv = bake_target_label_BC + "_uv"
 #         cur_obj = context.active_object#находим выбранный объект
 #         #выставление настроек рендера
@@ -375,7 +371,7 @@ class RenderSettBC(bpy.types.Operator):##Запекание цвета
 #         context.scene.render.bake.use_pass_color = True
 #         node_tree = None
 #         principled_node = None
-#         bake_resolution = int(context.active_object.simple_bake_resolution)
+#         bake_resolution = int(context.active_object.bake_resolution_cycles)
 #         found_image = False
 #         mats_bc = [None] * len(cur_obj.data.materials)
 #         mats_op = [None] * len(cur_obj.data.materials)
@@ -513,7 +509,7 @@ class RenderSettAO(bpy.types.Operator):##Запекание цвета
     def execute(self,context):
 
         samples = int(context.active_object.samples)
-        bake_target_label_ao = context.active_object.simple_bake_image_name + '_AO'
+        bake_target_label_ao = context.active_object.bake_image_name + '_AO'
         bake_target_label_uv = bake_target_label_ao + "_uv"
         cur_obj = context.active_object#находим выбранный объект
         #выставление настроек рендера
@@ -525,7 +521,7 @@ class RenderSettAO(bpy.types.Operator):##Запекание цвета
         bpy.data.scenes["Scene"].render.bake.use_selected_to_active = False
         cyc_sett.bake_type = 'AO'
         context.scene.render.engine = 'CYCLES'
-        bake_resolution = int(context.active_object.simple_bake_resolution)
+        bake_resolution = int(context.active_object.bake_resolution_cycles)
         mats_op = [None] * len(cur_obj.data.materials)
         def_op = 1.0#значение по умолчанию opacity
         found_image = False
@@ -616,7 +612,7 @@ class RenderSettM(bpy.types.Operator):##Запекание цвета
     def execute(self,context):
         
         samples = int(context.active_object.samples)
-        bake_target_label_m = context.active_object.simple_bake_image_name + '_M'
+        bake_target_label_m = context.active_object.bake_image_name + '_M'
         bake_target_label_uv = bake_target_label_m + "_uv"
         cur_obj = context.active_object#находим выбранный объект
         #выставление настроек рендера
@@ -633,7 +629,7 @@ class RenderSettM(bpy.types.Operator):##Запекание цвета
         context.scene.render.bake.use_pass_color = True
         node_tree = None
         principled_node = None
-        bake_resolution = int(context.active_object.simple_bake_resolution)
+        bake_resolution = int(context.active_object.bake_resolution_cycles)
         found_image = False
         mats_bc = [None] * len(cur_obj.data.materials)
         mats_op = [None] * len(cur_obj.data.materials)
@@ -770,7 +766,7 @@ class RenderSettEmi(bpy.types.Operator):##Запекание емисии
     def execute(self,context):
 
         samples = int(context.active_object.samples)
-        bake_target_label = context.active_object.simple_bake_image_name
+        bake_target_label = context.active_object.bake_image_name
         bake_target_label_uv = bake_target_label + "_uv"
         cur_obj = bpy.context.active_object#находим выбранный объект
         cyc_sett = bpy.data.scenes["Scene"].cycles
@@ -782,7 +778,7 @@ class RenderSettEmi(bpy.types.Operator):##Запекание емисии
         cyc_sett.use_denoising = False
         cyc_sett.samples = samples
         context.scene.render.engine = 'CYCLES'
-        bake_resolution = int(context.active_object.simple_bake_resolution)
+        bake_resolution = int(context.active_object.bake_resolution_cycles)
         mats_op = [None] * len(cur_obj.data.materials)
         def_op = 1.0#значение по умолчанию opacity
         found_image = False
@@ -836,7 +832,7 @@ class RenderSettEmi(bpy.types.Operator):##Запекание емисии
                             uv_map_node.uv_map = cur_obj.data.uv_layers.active.name#выбираем юв
 
                             node_tree.links.new(uv_map_node.outputs['UV'],texture_image_my.inputs['Vector'])#соединяем юв и картинку
-                            bake_resolution = int(context.active_object.simple_bake_resolution)
+                            bake_resolution = int(context.active_object.bake_resolution_cycles)
                             
                             node_tree.nodes.active = texture_image_my#делаем активной
                             node_tree.nodes.active.image = bpy.data.images[bake_target_label]#ставим в выбранную картинку    
@@ -878,7 +874,7 @@ class RenderSettOp(bpy.types.Operator):##Запекание opacity
     def execute(self,context):
 
         samples = int(context.active_object.samples)
-        bake_target_label_op = context.active_object.simple_bake_image_name + '_op'
+        bake_target_label_op = context.active_object.bake_image_name + '_op'
         bake_target_label_uv = bake_target_label_op + "_uv"
         cur_obj = bpy.context.active_object#находим выбранный объект
         cyc_sett = bpy.data.scenes["Scene"].cycles
@@ -890,7 +886,7 @@ class RenderSettOp(bpy.types.Operator):##Запекание opacity
         cyc_sett.use_denoising = False
         cyc_sett.samples = samples
         context.scene.render.engine = 'CYCLES'
-        bake_resolution = int(context.active_object.simple_bake_resolution)
+        bake_resolution = int(context.active_object.bake_resolution_cycles)
         found_image = False
         mats_emi = [None] * len(cur_obj.data.materials)
         mats_m = [None] * len(cur_obj.data.materials)
@@ -1010,7 +1006,7 @@ class RenderSettRough(bpy.types.Operator):##Запекание емисии
     def execute(self,context):
 
         samples = int(context.active_object.samples)
-        bake_target_label_R = context.active_object.simple_bake_image_name + '_R'
+        bake_target_label_R = context.active_object.bake_image_name + '_R'
         bake_target_label_uv = bake_target_label_R + "_uv"
         cur_obj = bpy.context.active_object#находим выбранный объект
         cyc_sett = bpy.data.scenes["Scene"].cycles
@@ -1021,7 +1017,7 @@ class RenderSettRough(bpy.types.Operator):##Запекание емисии
         cyc_sett.use_denoising = False
         cyc_sett.samples = samples
         context.scene.render.engine = 'CYCLES'
-        bake_resolution = int(context.active_object.simple_bake_resolution)
+        bake_resolution = int(context.active_object.bake_resolution_cycles)
         found_image = False
         mats_bc = [None] * len(cur_obj.data.materials)
         mats_op = [None] * len(cur_obj.data.materials)
@@ -1165,7 +1161,7 @@ class RenderSettNorm(bpy.types.Operator):##Запекание нормала
     def execute(self,context):
 
         samples = int(context.active_object.samples)
-        bake_target_label_N = context.active_object.simple_bake_image_name + "_N"
+        bake_target_label_N = context.active_object.bake_image_name + "_N"
         bake_target_label_uv = bake_target_label_N + "_uv"
         cur_obj = bpy.context.active_object#находим выбранный объект
         cyc_sett = bpy.data.scenes["Scene"].cycles
@@ -1178,7 +1174,7 @@ class RenderSettNorm(bpy.types.Operator):##Запекание нормала
         cyc_sett.use_denoising = False
         cyc_sett.samples = samples
         context.scene.render.engine = 'CYCLES'
-        bake_resolution = int(context.active_object.simple_bake_resolution)
+        bake_resolution = int(context.active_object.bake_resolution_cycles)
         found_image = False
         mats_ior = [None] * len(cur_obj.data.materials)
         mats_n = [None] * len(cur_obj.data.materials)
@@ -1256,7 +1252,7 @@ class RenderSettNorm(bpy.types.Operator):##Запекание нормала
                             node_tree.links.new(uv_map_node.outputs['UV'],texture_image_my.inputs['Vector'])#соединяем юв и картинку
                             node_tree.links.new(uv_map_node.outputs['UV'],texture_image_my_second.inputs['Vector'])#соединяем юв и вторую картинку
                             node_tree.links.new(texture_image_my_second.outputs['Color'],node_normal_object.inputs['Color'])#соединяем вторую картинку и нормал мап
-                            bake_resolution = int(context.active_object.simple_bake_resolution)
+                            bake_resolution = int(context.active_object.bake_resolution_cycles)
                             
                             node_tree.nodes.active = texture_image_my_second#делаем активной текстуру для тангенс спейса
                             node_tree.nodes.active.image = bpy.data.images[bake_target_label_N]#ставим в выбранную картинку
@@ -1355,7 +1351,7 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
     def execute(self,context):
 
         samples = int(context.active_object.samples)
-        bake_target_label_R = context.active_object.simple_bake_image_name + '_R'
+        bake_target_label_R = context.active_object.bake_image_name + '_R'
         bake_target_label_uv = bake_target_label_R + "_uv"
         cur_obj = bpy.context.active_object#находим выбранный объект
         cyc_sett = bpy.data.scenes["Scene"].cycles
@@ -1366,7 +1362,7 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
         cyc_sett.use_denoising = False
         cyc_sett.samples = samples
         context.scene.render.engine = 'CYCLES'
-        bake_resolution = int(context.active_object.simple_bake_resolution)
+        bake_resolution = int(context.active_object.bake_resolution_cycles)
         found_image = False
         mats_bc = [None] * len(cur_obj.data.materials)
         mats_op = [None] * len(cur_obj.data.materials)
@@ -1502,7 +1498,7 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
                             node_tree.nodes.remove(found_node1) 
         
         samples = int(context.active_object.samples)
-        bake_target_label_m = context.active_object.simple_bake_image_name + '_M'
+        bake_target_label_m = context.active_object.bake_image_name + '_M'
         bake_target_label_uv = bake_target_label_m + "_uv"
         cur_obj = context.active_object#находим выбранный объект
         #выставление настроек рендера
@@ -1519,7 +1515,7 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
         context.scene.render.bake.use_pass_color = True
         node_tree = None
         principled_node = None
-        bake_resolution = int(context.active_object.simple_bake_resolution)
+        bake_resolution = int(context.active_object.bake_resolution_cycles)
         found_image = False
         mats_bc = [None] * len(cur_obj.data.materials)
         mats_op = [None] * len(cur_obj.data.materials)
@@ -1647,7 +1643,7 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
                             found_node1 = node
                             node_tree.nodes.remove(found_node1)   
         samples = int(context.active_object.samples)
-        bake_target_label_ao = context.active_object.simple_bake_image_name + '_AO'
+        bake_target_label_ao = context.active_object.bake_image_name + '_AO'
         bake_target_label_uv = bake_target_label_ao + "_uv"
         cur_obj = context.active_object#находим выбранный объект
         #выставление настроек рендера
@@ -1659,7 +1655,7 @@ class RenderSettRMA(bpy.types.Operator):##Запекание емисии
         bpy.data.scenes["Scene"].render.bake.use_selected_to_active = False
         cyc_sett.bake_type = 'AO'
         context.scene.render.engine = 'CYCLES'
-        bake_resolution = int(context.active_object.simple_bake_resolution)
+        bake_resolution = int(context.active_object.bake_resolution_cycles)
         mats_op = [None] * len(cur_obj.data.materials)
         def_op = 1.0#значение по умолчанию opacity
         found_image = False
@@ -1839,8 +1835,8 @@ class CombineBCOP(bpy.types.Operator):
     def execute(self, context):
         bpy.ops.object.rendersettbc()
         bpy.ops.object.rendersettop()
-        img_bc = context.active_object.simple_bake_image_name + "_bc"
-        img_op = context.active_object.simple_bake_image_name + "_op"
+        img_bc = context.active_object.bake_image_name + "_bc"
+        img_op = context.active_object.bake_image_name + "_op"
         base = bpy.data.images[img_bc]  # изображение, которому добавляем альфа-канал
         mask = bpy.data.images[img_op]  # изображение-маска
 
@@ -1853,7 +1849,7 @@ class CombineBCOP(bpy.types.Operator):
 
         result_pixels = base_pixels.copy()
         result_pixels[:, :, 3] = mask_pixels[:, :, 0]  # красный канал маски → альфа
-        combined_name = context.active_object.simple_bake_image_name + "_bcop"
+        combined_name = context.active_object.bake_image_name + "_bcop"
         result = bpy.data.images.new(
             combined_name,
             width=width,
@@ -1862,8 +1858,8 @@ class CombineBCOP(bpy.types.Operator):
         )
         result.pixels.foreach_set(result_pixels.ravel())
         for image in bpy.data.images:
-            if(image.name == context.active_object.simple_bake_image_name + "_bc" or 
-               image.name == context.active_object.simple_bake_image_name + "_op"):#удаляем bc и op чтоб не мешали
+            if(image.name == context.active_object.bake_image_name + "_bc" or 
+               image.name == context.active_object.bake_image_name + "_op"):#удаляем bc и op чтоб не мешали
                 bpy.data.images.remove(image)#удаляем ее
                 pass
         return {'FINISHED'}
@@ -1889,9 +1885,9 @@ class OBJECT_PT_CustomPanelBakeSettings(bpy.types.Panel):
                 if bpy.context.active_object in bpy.context.selected_objects:
                     if a <1 :
                         row = layout.row()
-                        row.prop(context.active_object, 'simple_bake_resolution', text='Resolution', icon='OBJECT_HIDDEN')
+                        row.prop(context.active_object, 'bake_resolution_cycles', text='Resolution', icon='OBJECT_HIDDEN')
                         row = layout.row()
-                        row.prop(context.active_object, 'simple_bake_image_name', text="Image name", icon= 'NODE_TEXTURE')
+                        row.prop(context.active_object, 'bake_image_name', text="Image name", icon= 'NODE_TEXTURE')
                         row = layout.row()
                         row.prop(context.active_object, 'samples', text="Samples")
                         layout.prop(bpy.context.active_object.data.uv_layers,'active_index',text = "UV Map")
@@ -1914,7 +1910,7 @@ class OBJECT_PT_CustomPanelBakeSettings(bpy.types.Panel):
                         layout.split(factor=0.1)
                         box = layout.box()
                         row = box.row()
-                        row.prop(context.active_object, 'simple_bake_image_res', text="Render Resolution")
+                        row.prop(context.active_object, 'bake_image_resolution_eve', text="Render Resolution")
                         box.operator("object.renderbc")
                         box.operator("object.re_cycles")
                         box.operator("object.re_eevee")
@@ -1973,7 +1969,7 @@ def unregister():
     
 
 def register_properties():
-    bpy.types.Object.simple_bake_resolution = EnumProperty(
+    bpy.types.Object.bake_resolution_cycles = EnumProperty(
         name="Resolution",
         items=(
             ("128", "128x128", ""),
@@ -1987,7 +1983,7 @@ def register_properties():
         default="1024"
     )
     
-    bpy.types.Object.simple_bake_image_name = StringProperty(
+    bpy.types.Object.bake_image_name = StringProperty(
         name = "Bake Image Name",
         default="BakedImage"
     )
@@ -1996,7 +1992,7 @@ def register_properties():
         name = "Samples",
         default="10"
     )
-    bpy.types.Object.simple_bake_image_res = StringProperty(
+    bpy.types.Object.bake_image_resolution_eve = StringProperty(
         name = "Render Resolution",
         default="1024"
     )
@@ -2004,9 +2000,9 @@ def register_properties():
 
 
 def unregister_properties():
-    del bpy.types.Object.simple_bake_resolution
-    del bpy.types.Object.simple_bake_image_name
-    del bpy.types.Object.simple_bake_image_res
+    del bpy.types.Object.bake_resolution_cycles
+    del bpy.types.Object.bake_image_name
+    del bpy.types.Object.bake_image_resolution_eve
     del bpy.types.Object.samples
 
     pass
