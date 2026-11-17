@@ -347,7 +347,160 @@ class RenderSettBC(bpy.types.Operator):##Запекание цвета
                                        
         return {'FINISHED'}
 
+class RenderSettBCOP(bpy.types.Operator):##Запекание цвета
+    bl_idname = "object.rendersettbcop"
+    bl_label = "Bake Base Color/Opacity"
     
+    def execute(self,context):
+
+        samples = int(context.active_object.samples)
+        bake_target_label_BC = context.active_object.simple_bake_image_name + '_bc'
+        bake_target_label_uv = bake_target_label_BC + "_uv"
+        cur_obj = context.active_object#находим выбранный объект
+        #выставление настроек рендера
+        cyc_sett = context.scene.cycles
+        cyc_sett.device = "GPU"
+        bpy.data.scenes["Scene"].render.bake.use_selected_to_active = False
+        cyc_sett.use_adaptive_sampling = False
+        cyc_sett.use_denoising = False
+        cyc_sett.samples = samples
+        cyc_sett.bake_type = 'EMIT'
+        context.scene.render.engine = 'CYCLES'
+        context.scene.render.bake.use_pass_direct = False
+        context.scene.render.bake.use_pass_indirect = False
+        context.scene.render.bake.use_pass_color = True
+        node_tree = None
+        principled_node = None
+        bake_resolution = int(context.active_object.simple_bake_resolution)
+        found_image = False
+        mats_bc = [None] * len(cur_obj.data.materials)
+        mats_op = [None] * len(cur_obj.data.materials)
+        def_op = 1.0#значение по умолчанию opacity
+        for image in bpy.data.images:
+            if(image.name == bake_target_label_BC):#если картинка уже существовала
+                img = bpy.data.images.get(bake_target_label_BC)
+                bpy.data.images.remove(img)#удаляем ее
+                found_image = False
+                break
+        if(found_image == False):
+            bake_img = bpy.ops.image.new(name = bake_target_label_BC,width=bake_resolution,height=bake_resolution)#создаем картинку
+            bpy.data.images[bake_target_label_BC].colorspace_settings.name = "sRGB"#назначаем нужный цветовой профиль
+        if(len(cur_obj.data.materials)>0):#если есть материал
+            for index, material in enumerate(cur_obj.data.materials):
+                #настройка материала
+                node_tree = material.node_tree#лезем в ноды
+                nodes = node_tree.nodes#и в дерево
+                if node_tree:
+                    output_node = node_tree.nodes.get("Material Output")#нашли общую ноду ##Material Output
+                    principled_node = output_node.inputs[0].links[0].from_node#нашли ноду принциплед
+                    BC_input = principled_node.inputs[0]#нашли вход BC
+                    opacity_input = principled_node.inputs[4]#нашли вход opacity----------
+                    if BC_input.is_linked == False:
+                        self.report({'ERROR'}, "Base Color input is not connected on material "+cur_obj.data.materials[index].name)#если не подключен металик
+                        return {'CANCELLED'}
+                    else:
+                        pass
+                        # if opacity_input.is_linked:#если есть какоенибудь соединение c opacity
+                        #     link = opacity_input.links[0]  # Берём первое соединение
+                        #     mats_op[index] = ( link.from_node, link.from_socket.name )
+                        #     node_tree.links.remove(link) #удаляем то что в opacity идет
+                        #     opacity_input.default_value = 1.0 #ставим опакити в 1 чтоб не было прозрачности при запекании
+                        # else:
+                        #     def_op = opacity_input.default_value #запоминаем старый opacity
+                        #     opacity_input.default_value = 1.0 #ставим опакити в 1 чтоб не было прозрачности при запекании
+                if node_tree:
+                    # Ищем узел с указанным лейблом чтоб не создовать несколько
+                    found_node = None
+                    found_node1 = None
+                    for node in node_tree.nodes:
+                        if node.label == bake_target_label_BC:
+                            found_node = node
+                            node_tree.nodes.active = found_node
+                        if node.label == bake_target_label_uv:
+                            found_node1 = node
+                            found_node1.uv_map = cur_obj.data.uv_layers.active.name
+                            break
+                        else:
+                            ########################################################################################### Поиск и пересоединение Металика
+                            output_node = node_tree.nodes.get("Material Output")#нашли общую ноду ##Material Output
+                            principled_node = output_node.inputs[0].links[0].from_node#нашли ноду принциплед
+                            BC_input = principled_node.inputs[0]#нашли вход BC
+                            emission_input = principled_node.inputs[30]#нашли вход Emission
+                            emission_str = principled_node.inputs[31]#нашли вход Emission strength
+                            def_emi_str = emission_str.default_value#сохранили стандартную эмиссию
+                            emission_str_val = 1.0
+                            connected_node_metalic= None#ищем подключенную ноду к металику
+                            connected_socket_metalic = None#ищем ее название
+                            emission_str.default_value = emission_str_val
+                            if emission_input.is_linked:#если есть какоенибудь соединение
+                                link = emission_input.links[0]  # Берём первое соединение
+                                mats_bc[index] = ( link.from_node, link.from_socket.name )
+                            if BC_input.is_linked:#если есть какоенибудь соединение
+                                link = BC_input.links[0]  # Берём первое соединение
+                                connected_node_metalic = link.from_node  # Нода, откуда идёт связь
+                                connected_socket_metalic = link.from_socket.name  # имя, откуда идёт связь
+                            else:
+                                self.report({'ERROR'}, "BC input is not connected on material "+cur_obj.data.materials[index].name)#если не подключен металик
+                                return {'CANCELLED'}
+                            if connected_node_metalic:#если существует подключенная нода
+                                node_tree.links.new(connected_node_metalic.outputs[connected_socket_metalic],principled_node.inputs[30])#соединяем с emission color
+
+                            texture_image_my = nodes.new(type="ShaderNodeTexImage")#создаем  ноду картинки
+                            texture_image_my.label = bake_target_label_BC
+                            uv_map_node  = nodes.new(type="ShaderNodeUVMap")#создаем ноду юв
+                            uv_map_node.label = bake_target_label_uv
+                            uv_map_node.uv_map = cur_obj.data.uv_layers.active.name#выбираем юв
+                            node_tree.links.new(uv_map_node.outputs['UV'],texture_image_my.inputs['Vector'])#соединяем юв и картинку
+                            node_tree.nodes.active = texture_image_my#делаем активной
+                            node_tree.nodes.active.image = bpy.data.images[bake_target_label_BC]#ставим в выбранную картинку
+                            break
+        context.scene.render.bake.use_selected_to_active = False#отключаем запекание с активного на выбранный
+        bpy.ops.object.bake(type="EMIT",use_clear= True) 
+        ############################################################################################Вертаем взад
+        if(len(cur_obj.data.materials)>0):#если есть материал
+            for index, material in enumerate(cur_obj.data.materials):
+                #настройка материала
+                node_tree = material.node_tree#лезем в ноды
+                nodes = node_tree.nodes#и в дерево
+                if node_tree:
+                    output_node = node_tree.nodes.get("Material Output")#нашли общую ноду ##Material Output
+                    principled_node = output_node.inputs[0].links[0].from_node#нашли ноду принциплед
+                    opacity_input = principled_node.inputs[4]#нашли вход opacity---------
+                    emission_input_input = principled_node.inputs[30]#нашли вход emission
+                    emission_str = principled_node.inputs[31]
+                    emission_str.default_value = def_emi_str#возвращаем силу емиссии
+                    if mats_op[index]:#если был запомнен opacity
+                        node_tree.links.new(mats_op[index][0].outputs[mats_op[index][1]],principled_node.inputs[4])#соединяем с opacity
+                    else:
+                        pass
+                        # opacity_input.default_value = def_op#возвращаем старый opacity
+                    if emission_input_input.is_linked:#если есть какоенибудь соединение
+                            link = emission_input_input.links[0]  # Берём первое соединение
+                            node_tree.links.remove(link)
+                            if mats_bc[index]:#соединяем с тем emi что был до запекания
+                                node_tree.links.new(mats_bc[index][0].outputs[mats_bc[index][1]],principled_node.inputs[30])#соединяем с emission
+        ###########################################################################################
+########удаление использованного из материала
+        if(len(cur_obj.data.materials)>0):#если есть материал
+            for index, material in enumerate(cur_obj.data.materials):
+                #настройка материала
+                node_tree = material.node_tree#лезем в ноды
+                nodes = node_tree.nodes#и в дерево
+                if node_tree:
+                    # Ищем узел с указанным лейблом чтоб не создовать несколько
+                    found_node = None
+                    found_node1 = None
+                    for node in node_tree.nodes:
+                        if node.label == bake_target_label_BC:
+                            found_node = node
+                            node_tree.nodes.remove(found_node)
+                        
+                    for node in node_tree.nodes:
+                        if node.label == bake_target_label_uv:
+                            found_node1 = node
+                            node_tree.nodes.remove(found_node1)
+                                       
+        return {'FINISHED'}
 
 class RenderSettAO(bpy.types.Operator):##Запекание цвета
     bl_idname = "object.rendersettao"
@@ -1705,6 +1858,7 @@ class OBJECT_PT_CustomPanelBakeSettings(bpy.types.Panel):
                         layout.operator("object.rendersettsave", icon='COLLECTION_COLOR_01')
                         layout.operator("object.rendersettselfemi", icon='RESTRICT_RENDER_OFF')
                         layout.operator("object.rendersettbc", icon='RESTRICT_RENDER_OFF')
+                        layout.operator("object.rendersettbcop", icon='RESTRICT_RENDER_OFF')
                         layout.operator("object.rendersettemi", icon='RESTRICT_RENDER_OFF')
                         layout.operator("object.rendersettnorm", icon='RESTRICT_RENDER_OFF')
                         layout.operator("object.rendersettm", icon='RESTRICT_RENDER_OFF')
@@ -1736,6 +1890,7 @@ def register():
     bpy.utils.register_class(RenderSettEmi)
     bpy.utils.register_class(RenderSettSelfEmi)
     bpy.utils.register_class(RenderSettBC)
+    bpy.utils.register_class(RenderSettBCOP)
     bpy.utils.register_class(RenderSettNorm)
     bpy.utils.register_class(RenderSettM)
     bpy.utils.register_class(RenderSettRough)
@@ -1758,6 +1913,7 @@ def unregister():
     bpy.utils.unregister_class(RenderSettEmi)
     bpy.utils.unregister_class(RenderSettSelfEmi)
     bpy.utils.unregister_class(RenderSettBC)
+    bpy.utils.unregister_class(RenderSettBCOP)
     bpy.utils.unregister_class(RenderSettNorm)
     bpy.utils.unregister_class(RenderSettM)
     bpy.utils.unregister_class(RenderSettRough)
@@ -1783,7 +1939,6 @@ def register_properties():
             ("1024", "1024x1024", ""),
             ("2048", "2048x2048", ""),
             ("4096", "4096x4096", ""),
-            ("256512", "256x512", ""),
             #TODO: Add more
         ),
         default="1024"
