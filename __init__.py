@@ -245,8 +245,9 @@ class RenderSettBC(bpy.types.Operator):##Запекание цвета
                     BC_input = principled_node.inputs[0]#нашли вход BC
                     opacity_input = principled_node.inputs[4]#нашли вход opacity----------
                     if BC_input.is_linked == False:
-                        self.report({'ERROR'}, "Base Color input is not connected on material "+cur_obj.data.materials[index].name)#если не подключен металик
-                        return {'CANCELLED'}
+                        # self.report({'ERROR'}, "Base Color input is not connected on material "+cur_obj.data.materials[index].name)#если не подключен металик
+                        # return {'CANCELLED'}
+                        pass
                     else:
                         if opacity_input.is_linked:#если есть какоенибудь соединение c opacity
                             link = opacity_input.links[0]  # Берём первое соединение
@@ -277,21 +278,27 @@ class RenderSettBC(bpy.types.Operator):##Запекание цвета
                             emission_str = principled_node.inputs[31]#нашли вход Emission strength
                             def_emi_str = emission_str.default_value#сохранили стандартную эмиссию
                             emission_str_val = 1.0
-                            connected_node_metalic= None#ищем подключенную ноду к металику
-                            connected_socket_metalic = None#ищем ее название
+                            connected_node_bc= None#ищем подключенную ноду к металику
+                            connected_socket_bc = None#ищем ее название
                             emission_str.default_value = emission_str_val
                             if emission_input.is_linked:#если есть какоенибудь соединение
                                 link = emission_input.links[0]  # Берём первое соединение
                                 mats_bc[index] = ( link.from_node, link.from_socket.name )
                             if BC_input.is_linked:#если есть какоенибудь соединение
                                 link = BC_input.links[0]  # Берём первое соединение
-                                connected_node_metalic = link.from_node  # Нода, откуда идёт связь
-                                connected_socket_metalic = link.from_socket.name  # имя, откуда идёт связь
+                                connected_node_bc = link.from_node  # Нода, откуда идёт связь
+                                connected_socket_bc = link.from_socket.name  # имя, откуда идёт связь
                             else:
-                                self.report({'ERROR'}, "BC input is not connected on material "+cur_obj.data.materials[index].name)#если не подключен металик
-                                return {'CANCELLED'}
-                            if connected_node_metalic:#если существует подключенная нода
-                                node_tree.links.new(connected_node_metalic.outputs[connected_socket_metalic],principled_node.inputs[30])#соединяем с emission color
+                                # self.report({'ERROR'}, "BC input is not connected on material "+cur_obj.data.materials[index].name)#если не подключен металик
+                                # return {'CANCELLED'}
+                                default_base_color = principled_node.inputs[0]
+                                default_base_color_value = tuple(default_base_color.default_value)
+                                default_emission_color = principled_node.inputs[30]
+                                default_emission_color_value = tuple(default_emission_color.default_value)
+                                principled_node.inputs[30].default_value = default_base_color_value
+                                pass
+                            if connected_node_bc:#если существует подключенная нода
+                                node_tree.links.new(connected_node_bc.outputs[connected_socket_bc],principled_node.inputs[30])#соединяем с emission color
 
                             texture_image_my = nodes.new(type="ShaderNodeTexImage")#создаем  ноду картинки
                             texture_image_my.label = bake_target_label_BC
@@ -326,6 +333,8 @@ class RenderSettBC(bpy.types.Operator):##Запекание цвета
                             node_tree.links.remove(link)
                             if mats_bc[index]:#соединяем с тем emi что был до запекания
                                 node_tree.links.new(mats_bc[index][0].outputs[mats_bc[index][1]],principled_node.inputs[30])#соединяем с emission
+                    else:
+                        principled_node.inputs[30].default_value = default_emission_color_value#возвращаем старый цвет емиссии
         ###########################################################################################
 ########удаление использованного из материала
         if(len(cur_obj.data.materials)>0):#если есть материал
