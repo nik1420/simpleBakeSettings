@@ -672,8 +672,9 @@ class RenderSettEmi(bpy.types.Operator):##Запекание емисии
                     opacity_input = principled_node.inputs[4]#нашли вход opacity------
                     emission_input = principled_node.inputs[30]#нашли вход эмисии
                     if emission_input.is_linked == False:
-                        self.report({'ERROR'}, "Emission input is not connected on material "+cur_obj.data.materials[index].name)#если не подключен эмиссионный
-                        return {'CANCELLED'}
+                        # self.report({'ERROR'}, "Emission input is not connected on material "+cur_obj.data.materials[index].name)#если не подключен эмиссионный
+                        # return {'CANCELLED'}
+                        pass
                     else:
                         if opacity_input.is_linked:#если есть какоенибудь соединение c opacity
                             link = opacity_input.links[0]  # Берём первое соединение
