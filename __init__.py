@@ -1092,8 +1092,9 @@ class RenderSettNorm(bpy.types.Operator):##Запекание нормала
                     n_input = principled_node.inputs[5]#нашли вход normal
                     opacity_input = principled_node.inputs[4]#нашли вход opacity---
                     if n_input.is_linked == False:
-                        self.report({'ERROR'}, "Normal input is not connected on material "+cur_obj.data.materials[index].name)#если не подключен normal
-                        return {'CANCELLED'}
+                        # self.report({'ERROR'}, "Normal input is not connected on material "+cur_obj.data.materials[index].name)#если не подключен normal
+                        # return {'CANCELLED'}
+                        pass
                     else:
                         if opacity_input.is_linked:#если есть какоенибудь соединение c opacity
                             link = opacity_input.links[0]  # Берём первое соединение
