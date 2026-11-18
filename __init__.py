@@ -511,9 +511,10 @@ class RenderSettM(bpy.types.Operator):##Запекание цвета
                     principled_node = output_node.inputs[0].links[0].from_node#нашли ноду принциплед
                     opacity_input = principled_node.inputs[4]#нашли вход opacity-------------------------------------------------------
                     metalic_input = principled_node.inputs.get("Metallic")#нашли вход металик
-                    if metalic_input.is_linked == False:
-                        self.report({'ERROR'}, "Metallic input is not connected on material "+cur_obj.data.materials[index].name)#если не подключен металик
-                        return {'CANCELLED'}
+                    if not metalic_input.is_linked:
+                        # self.report({'ERROR'}, "Metallic input is not connected on material "+cur_obj.data.materials[index].name)#если не подключен металик
+                        # return {'CANCELLED'}
+                        pass
                     else:
                         if opacity_input.is_linked:#если есть какоенибудь соединение c opacity
                             link = opacity_input.links[0]  # Берём первое соединение
@@ -542,11 +543,11 @@ class RenderSettM(bpy.types.Operator):##Запекание цвета
                             metalic_input = principled_node.inputs.get("Metallic")#нашли вход металик
                             emission_input = principled_node.inputs[30]#нашли вход Emission
                             emission_str = principled_node.inputs[31]#нашли вход Emission strength
-                            def_emi_str = emission_str.default_value#сохранили стандартную эмиссию
-                            emission_str_val = 1.0
+                            # def_emi_str = emission_str.default_value#сохранили стандартную эмиссию
+                            # emission_str_val = 1.0
                             connected_node_metalic= None#ищем подключенную ноду к металику
                             connected_socket_metalic = None#ищем ее название
-                            emission_str.default_value = emission_str_val
+                            # emission_str.default_value = emission_str_val
                             if emission_input.is_linked:#если есть какоенибудь соединение
                                 link = emission_input.links[0]  # Берём первое соединение
                                 mats_bc[index] = ( link.from_node, link.from_socket.name )
@@ -555,11 +556,19 @@ class RenderSettM(bpy.types.Operator):##Запекание цвета
                                 connected_node_metalic = link.from_node  # Нода, откуда идёт связь
                                 connected_socket_metalic = link.from_socket.name  # имя, откуда идёт связь
                             else:
-                                self.report({'ERROR'}, "Metallic input is not connected on material "+cur_obj.data.materials[index].name)#если не подключен металик
-                                return {'CANCELLED'}
+                                # self.report({'ERROR'}, "Metallic input is not connected on material "+cur_obj.data.materials[index].name)#если не подключен металик
+                                # return {'CANCELLED'}
+                                default_metalic = principled_node.inputs.get("Metallic")
+                                default_metalic_value = default_metalic.default_value
+                                default_emission = principled_node.inputs[30]
+                                default_emission_value = principled_node.inputs[31].default_value
+                                default_emission_color = tuple(default_emission.default_value)
+                                pass
                             if connected_node_metalic:#если существует подключенная нода
                                 node_tree.links.new(connected_node_metalic.outputs[connected_socket_metalic],principled_node.inputs[30])#соединяем с emission color
-
+                            else:
+                                principled_node.inputs[30].default_value = [default_metalic_value,default_metalic_value,default_metalic_value,1.0]
+                                principled_node.inputs[31].default_value = 1.0
                             texture_image_my = nodes.new(type="ShaderNodeTexImage")#создаем  ноду картинки
                             texture_image_my.label = bake_target_label_m
                             uv_map_node  = nodes.new(type="ShaderNodeUVMap")#создаем ноду юв
@@ -582,8 +591,8 @@ class RenderSettM(bpy.types.Operator):##Запекание цвета
                     output_node = node_tree.nodes.get("Material Output")#нашли общую ноду ##Material Output
                     principled_node = output_node.inputs[0].links[0].from_node#нашли ноду принциплед
                     emission_input_input = principled_node.inputs[30]#нашли вход emission
-                    emission_str = principled_node.inputs[31]
-                    emission_str.default_value = def_emi_str#возвращаем силу емиссии
+                    # emission_str = principled_node.inputs[31]
+                    # emission_str.default_value = def_emi_str#возвращаем силу емиссии
                     opacity_input = principled_node.inputs[4]#нашли вход opacity---------------------
                     if mats_op[index]:#если был запомнен opacity
                         node_tree.links.new(mats_op[index][0].outputs[mats_op[index][1]],principled_node.inputs[4])#соединяем с opacity
@@ -594,6 +603,9 @@ class RenderSettM(bpy.types.Operator):##Запекание цвета
                             node_tree.links.remove(link)
                             if mats_bc[index]:#соединяем с тем emi что был до запекания
                                 node_tree.links.new(mats_bc[index][0].outputs[mats_bc[index][1]],principled_node.inputs[30])#соединяем с emission
+                    else:
+                        principled_node.inputs[30].default_value = default_emission_color#возвращаем старый цвет емиссии
+                        principled_node.inputs[31].default_value = default_emission_value#возвращаем старый цвет емиссии
         ###########################################################################################
 ########удаление использованного из материала
         if(len(cur_obj.data.materials)>0):#если есть материал
@@ -909,8 +921,9 @@ class RenderSettRough(bpy.types.Operator):##Запекание емисии
                     principled_node = output_node.inputs[0].links[0].from_node#нашли ноду принциплед
                     roughness_input = principled_node.inputs[2]#нашли вход roughness
                     if roughness_input.is_linked == False:
-                        self.report({'ERROR'}, "Roughness input is not connected on material "+cur_obj.data.materials[index].name)#если не подключен roughness
-                        return {'CANCELLED'}
+                        # self.report({'ERROR'}, "Roughness input is not connected on material "+cur_obj.data.materials[index].name)#если не подключен roughness
+                        # return {'CANCELLED'}
+                        pass
                     else:
                         pass
                 if node_tree:
@@ -934,10 +947,10 @@ class RenderSettRough(bpy.types.Operator):##Запекание емисии
                             opacity_input = principled_node.inputs[4]#нашли вход opacity-------------------------------------------------------
                             emission_str = principled_node.inputs[31]#нашли вход Emission strength
                             def_emi_str = emission_str.default_value#сохранили стандартную эмиссию
-                            emission_str_val = 1.0#значение силы емиссии
+                            #emission_str_val = 1.0#значение силы емиссии
                             connected_node_roughness= None#ищем подключенную ноду к металику
                             connected_socket_roughness = None#ищем ее название
-                            emission_str.default_value = emission_str_val#назначение силы эмиссии
+                            #emission_str.default_value = emission_str_val#назначение силы эмиссии
                             
                             if emission_input.is_linked:#если есть какоенибудь соединение
                                 link = emission_input.links[0]  # Берём первое соединение
@@ -948,8 +961,12 @@ class RenderSettRough(bpy.types.Operator):##Запекание емисии
                                 connected_node_roughness = link.from_node  # Нода, откуда идёт связь
                                 connected_socket_roughness = link.from_socket.name  # имя, откуда идёт связь
                             else:
-                                self.report({'ERROR'}, "Roughness input is not connected on material "+cur_obj.data.materials[index].name)#если не подключен roughness
-                                return {'CANCELLED'}
+                                # self.report({'ERROR'}, "Roughness input is not connected on material "+cur_obj.data.materials[index].name)#если не подключен roughness
+                                # return {'CANCELLED'}
+                                default_emission = principled_node.inputs[30]
+                                default_emission_color = tuple(default_emission.default_value)
+                                default_emission_value = principled_node.inputs[31].default_value
+                                pass
                             
                             if opacity_input.is_linked:#если есть какоенибудь соединение c opacity
                                 link = opacity_input.links[0]  # Берём первое соединение
@@ -962,7 +979,10 @@ class RenderSettRough(bpy.types.Operator):##Запекание емисии
                             
                             if connected_node_roughness:#если существует подключенная нода
                                 node_tree.links.new(connected_node_roughness.outputs[connected_socket_roughness],principled_node.inputs[30])#соединяем с emission color
-                                
+                            else:
+                                principled_node.inputs[31].default_value = 1.0
+                                roughness_value = roughness_input.default_value
+                                principled_node.inputs[30].default_value = [roughness_value,roughness_value,roughness_value,1.0]
 
                             texture_image_my = nodes.new(type="ShaderNodeTexImage")#создаем  ноду картинки
                             texture_image_my.label = bake_target_label_R
@@ -986,9 +1006,9 @@ class RenderSettRough(bpy.types.Operator):##Запекание емисии
                     output_node = node_tree.nodes.get("Material Output")#нашли общую ноду ##Material Output
                     principled_node = output_node.inputs[0].links[0].from_node#нашли ноду принциплед
                     emission_input_input = principled_node.inputs[30]#нашли вход emission
-                    emission_str = principled_node.inputs[31]
+                    #emission_str = principled_node.inputs[31]
                     opacity_input = principled_node.inputs[4]#нашли вход opacity-------------------------------------------------------
-                    emission_str.default_value = def_emi_str
+                    #emission_str.default_value = def_emi_str
                     if mats_op[index]:#если был запомнен opacity
                         node_tree.links.new(mats_op[index][0].outputs[mats_op[index][1]],principled_node.inputs[4])#соединяем с opacity
                     else:
@@ -998,6 +1018,9 @@ class RenderSettRough(bpy.types.Operator):##Запекание емисии
                             node_tree.links.remove(link)
                             if mats_bc[index]:#соединяем с тем emi что был до запекания
                                 node_tree.links.new(mats_bc[index][0].outputs[mats_bc[index][1]],principled_node.inputs[30])#соединяем с emission
+                    else:
+                        principled_node.inputs[30].default_value = default_emission_color#возвращаем старый цвет емиссии
+                        principled_node.inputs[31].default_value = default_emission_value#возвращаем старый цвет емиссии
         ###########################################################################################
 ########удаление использованного из материала
         if(len(cur_obj.data.materials)>0):#если есть материал
@@ -1891,7 +1914,8 @@ def register_properties():
 
 
 def unregister_properties():
-    del bpy.types.Object.bake_resolution_cycles
+    del bpy.types.Object.bake_resolution_cycles_x
+    del bpy.types.Object.bake_resolution_cycles_y
     del bpy.types.Object.bake_image_name
     del bpy.types.Object.bake_image_resolution_eve
     del bpy.types.Object.samples
