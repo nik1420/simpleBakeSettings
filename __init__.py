@@ -1713,6 +1713,11 @@ class CombineBCOP(bpy.types.Operator):
         result_pixels = base_pixels.copy()
         result_pixels[:, :, 3] = mask_pixels[:, :, 0]  # красный канал маски → альфа
         combined_name = context.active_object.bake_image_name + "_bcop"
+        for image in bpy.data.images:
+            if(image.name == combined_name):#если картинка уже существовала
+                    img = bpy.data.images.get(combined_name)
+                    bpy.data.images.remove(img)#удаляем ее
+                    pass
         result = bpy.data.images.new(
             combined_name,
             width=width,
